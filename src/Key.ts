@@ -1,24 +1,29 @@
-import { Tone } from "./Tone"
+import { Pitch } from "./Pitch"
 
 export interface Key {
   x: number,
   width: number,
   isShort: boolean,
-  color: number
-  tone: Tone,
-  keyboardChar?: string
+  color: number,
+  keyboardChar?: string,
+  pitch: Pitch
 }
 
 const short12TetKeys = [1, 3, 6, 8, 10]
 const tallKeyWidth = 32
 const shortKeyWidth = 16
-const keyboardChars = "qwertyuiopasdfghjklzxcvbnm"
 
-export function keyboardFromTones(tones: ReadonlyArray<Tone>): ReadonlyArray<Key> {
+const keyboardChars =
+  ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m']
+export const keyboardLookup =
+  Object.assign({}, ...keyboardChars.map((char, i) => ({ [char]: i })))
+
+export function keyboardFromPitches(pitches: ReadonlyArray<Pitch>): ReadonlyArray<Key> {
   const keyboard: Array<Key> = []
   let shortKeysSinceLastTallKey = 0
   let x = 0
-  tones.forEach((tone, index) => {
+  pitches.forEach((pitch, index) => {
+    const tone = pitch.tone
     const isShort = short12TetKeys.indexOf(tone.nearest12TetTone) >= 0
     const color = isShort
         ? Math.abs(tone.diffFromNearest12TetTone) / 100
@@ -44,7 +49,7 @@ export function keyboardFromTones(tones: ReadonlyArray<Tone>): ReadonlyArray<Key
     }
 
     const keyboardChar = keyboardChars[index]
-    const key = { x: xActual, width, isShort, color, tone, keyboardChar }
+    const key = { x: xActual, width, isShort, color, keyboardChar, pitch }
     keyboard.push(key)
     if (key.isShort) {
       ++shortKeysSinceLastTallKey
