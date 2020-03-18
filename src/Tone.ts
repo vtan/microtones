@@ -25,3 +25,12 @@ export function equalOctaveSubdivisions(numberOfSubdivisions: number): ReadonlyA
   }
   return result
 }
+
+export function toneColor(tone: Tone, startFromWhite: boolean): number {
+  const gamma = 1 / 2.2
+  let x = Math.abs(tone.diffFromNearest12TetTone) / 100
+  if (startFromWhite) {
+    x = 1 - x
+  }
+  return Math.pow(x, gamma)
+}
