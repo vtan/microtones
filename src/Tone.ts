@@ -34,3 +34,6 @@ export function toneColor(tone: Tone, startFromWhite: boolean): number {
   }
   return Math.pow(x, gamma)
 }
+
+export const notesIn12Edo: ReadonlyArray<string> =
+  ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"]

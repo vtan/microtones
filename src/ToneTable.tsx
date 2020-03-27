@@ -1,8 +1,7 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { Tone, toneColor } from "./Tone"
-import { intervalsIn12Edo } from "./Interval"
+import { Tone, toneColor, notesIn12Edo } from "./Tone"
 import { short12TetKeys } from "./Key"
 import { grayscaleColor } from "./Util"
 
@@ -12,20 +11,24 @@ export interface Props {
 }
 
 export function ToneTable({ tones, pressedToneMultipliers }: Props) {
+  const toneColors = React.useMemo(
+    () => tones.map(tone =>
+      grayscaleColor(toneColor(tone, short12TetKeys.indexOf(tone.nearest12TetTone) < 0))
+    ),
+    [tones]
+  )
   return <Container>
     <Table>
       <tbody>
         { tones.map((tone, index) => {
-            const nearest12EdoInterval = intervalsIn12Edo[tone.nearest12TetTone]
-            const interval = <abbr title={nearest12EdoInterval.longName}>{nearest12EdoInterval.shortName}</abbr>
+            const nearest12EdoNote = notesIn12Edo[tone.nearest12TetTone]
             const cents = tone.diffFromNearest12TetTone === 0 ? ""
               : tone.diffFromNearest12TetTone < 0 ? `− ${Math.abs(tone.diffFromNearest12TetTone).toFixed(0)}c`
               : `+ ${tone.diffFromNearest12TetTone.toFixed(0)}c`
-            const color = toneColor(tone, short12TetKeys.indexOf(tone.nearest12TetTone) < 0)
             return <tr key={index} style={{ backgroundColor: pressedToneMultipliers.indexOf(tone.rootMultiplier) >= 0 ? "yellow" : "transparent" }}>
-              <td style={{ backgroundColor: grayscaleColor(color), width: "1lh" }}></td>
+              <td style={{ backgroundColor: toneColors[index], width: "1lh" }}></td>
               <td>{index}</td>
-              <td>{interval} {cents}</td>
+              <td>{nearest12EdoNote} {cents}</td>
             </tr>
         }) }
       </tbody>
@@ -35,7 +38,7 @@ export function ToneTable({ tones, pressedToneMultipliers }: Props) {
 
 const Container = styled.div`
   display: flex;
-  line-height: 2rem;
+  line-height: 1.5rem;
 `
 
 const Table = styled.table`
