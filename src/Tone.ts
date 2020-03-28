@@ -2,7 +2,8 @@ export interface Tone {
   rootMultiplier: number,
   cents: number,
   nearest12TetTone: number,
-  diffFromNearest12TetTone: number
+  diffFromNearest12TetTone: number,
+  nearestTo12TetTone?: number
 }
 
 function toneFromSubdivision(subdivision: number): Tone {
@@ -18,12 +19,28 @@ function toneFromSubdivision(subdivision: number): Tone {
 }
 
 export function equalOctaveSubdivisions(numberOfSubdivisions: number): ReadonlyArray<Tone> {
-  const result = []
+  const tones: Array<Tone> = []
   for (let i = 0; i < numberOfSubdivisions; ++i) {
     const tone = toneFromSubdivision(i / numberOfSubdivisions)
-    result.push(tone)
+    tones.push(tone)
   }
-  return result
+  for (let i = 0; i < 12; ++i) {
+    let nearestIndex: number | undefined
+    tones.forEach((tone, j) => {
+      if (tone.nearest12TetTone === i) {
+        if (
+          nearestIndex === undefined ||
+          Math.abs(tones[nearestIndex].diffFromNearest12TetTone) > Math.abs(tone.diffFromNearest12TetTone)
+        ) {
+          nearestIndex = j
+        }
+      }
+    })
+    if (nearestIndex !== undefined) {
+      tones[nearestIndex].nearestTo12TetTone = i
+    }
+  }
+  return tones
 }
 
 export function toneColor(tone: Tone, startFromWhite: boolean): number {
