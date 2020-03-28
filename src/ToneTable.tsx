@@ -1,7 +1,7 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { Tone, toneColor, notesIn12Edo } from "./Tone"
+import { Tone, toneColor, notesIn12Edo, diffText } from "./Tone"
 import { short12TetKeys } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
 
@@ -22,9 +22,7 @@ export function ToneTable({ tones, pressedToneMultipliers }: Props) {
       <tbody>
         { tones.map((tone, index) => {
             const nearest12EdoNote = notesIn12Edo[tone.nearest12TetTone]
-            const cents = tone.diffFromNearest12TetTone === 0 ? ""
-              : tone.diffFromNearest12TetTone < 0 ? `− ${Math.abs(tone.diffFromNearest12TetTone).toFixed(0)}¢`
-              : `+ ${tone.diffFromNearest12TetTone.toFixed(0)}¢`
+            const cents = diffText(tone)
             return <tr key={index} style={{ backgroundColor: pressedToneMultipliers.indexOf(tone.rootMultiplier) >= 0 ? selectionColor : "transparent" }}>
               <td style={{ backgroundColor: toneColors[index], width: "1lh" }}></td>
               <td>{index}</td>

@@ -1,37 +1,46 @@
 import { PolySynth, Synth } from "tone"
 
 import { Key, keyboardFromPitches } from "./Key"
-import { tonesToPitches } from "./Pitch"
+import { tonesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Tone } from "./Tone"
+import { Sequence, emptySequence } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
 export const waveforms: ReadonlyArray<Waveform> = ["triangle", "sawtooth", "square", "sine", "sine3"]
 
+export type Panel = "sequencer" | "notes"
+
 export interface AppState {
+  openPanel: Panel,
   synth: PolySynth,
   waveform: Waveform,
   numberOfSubdivisions: number,
   tones: ReadonlyArray<Tone>,
+  pitches: ReadonlyArray<Pitch>,
   keys: ReadonlyArray<Key>,
   pressedKeyIndices: ReadonlyArray<number>,
-  pressedToneMultipliers: ReadonlyArray<number>
+  pressedToneMultipliers: ReadonlyArray<number>,
+  sequence: Sequence
 }
 
 function initializeState(numberOfSubdivisions: number): AppState {
   const waveform = "triangle"
   const synth = createSynth(waveform)
   const tones = equalOctaveSubdivisions(numberOfSubdivisions)
-  const pitches = tonesToPitches(261.6256, 2, tones)
+  const pitches = tonesToPitches(261.6256, 4, 2, tones)
   const keys = keyboardFromPitches(pitches)
   return {
+    openPanel: "sequencer",
     synth,
     waveform,
     numberOfSubdivisions,
     tones,
+    pitches,
     keys,
     pressedKeyIndices: [],
-    pressedToneMultipliers: []
+    pressedToneMultipliers: [],
+    sequence: emptySequence
   }
 }
 
@@ -50,7 +59,8 @@ function createSynth(waveform: Waveform): PolySynth {
 export const initialAppState: AppState = initializeState(12)
 
 export type AppAction =
-  { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
+  { type: "openPanel", panel: Panel }
+  | { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
   | { type: "setWaveform", waveform: AppState["waveform"] }
   | { type: "triggerNoteOn", keyIndex: number }
   | { type: "triggerNoteOff", keyIndex: number }
@@ -59,6 +69,9 @@ export type AppDispatch = (_: AppAction) => void
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
+    case "openPanel":
+      return { ...state, openPanel: action.panel }
+
     case "setNumberOfSubdivisions":
       state.synth.releaseAll()
       return initializeState(action.numberOfSubdivisions)

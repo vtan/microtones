@@ -52,5 +52,15 @@ export function toneColor(tone: Tone, startFromWhite: boolean): number {
   return Math.pow(x, gamma)
 }
 
+export function diffText({ diffFromNearest12TetTone }: Tone): string {
+  if (diffFromNearest12TetTone === 0) {
+    return ""
+  } else if (diffFromNearest12TetTone < 0) {
+    return `− ${Math.abs(diffFromNearest12TetTone).toFixed(0)}¢`
+  } else {
+    return `+ ${diffFromNearest12TetTone.toFixed(0)}¢`
+  }
+}
+
 export const notesIn12Edo: ReadonlyArray<string> =
   ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"]
