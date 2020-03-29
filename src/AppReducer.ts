@@ -3,7 +3,7 @@ import { Part, PolySynth, Synth, Transport } from "tone"
 import { Key, keyboardFromPitches } from "./Key"
 import { tonesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Tone } from "./Tone"
-import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents } from "./Sequence"
+import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
@@ -70,6 +70,7 @@ export type AppAction =
   | { type: "triggerNoteOn", keyIndex: number }
   | { type: "triggerNoteOff", keyIndex: number }
   | { type: "setSequencerSelection", selection?: SequenceIndex }
+  | { type: "setSelectedStep", step: Step }
   | { type: "startSequencer" }
   | { type: "stopSequencer" }
 
@@ -132,6 +133,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "setSequencerSelection":
       return { ...state, sequencerSelection: action.selection }
+
+    case "setSelectedStep":
+      if (state.sequencerSelection === undefined) {
+        return state
+      } else {
+        // TODO update part so the edited sequence is played
+        const sequence = setInSequence(state.sequencerSelection, action.step, state.sequence)
+        return { ...state, sequence }
+      }
 
     case "startSequencer": {
       const events = [ ...sequenceToEvents(state.pitches, state.sequence) ]

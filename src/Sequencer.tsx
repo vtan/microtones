@@ -16,8 +16,24 @@ interface Props {
 }
 
 export function Sequencer({ dispatch, sequence, pitches, selection, isPlaying } : Props) {
+  // TODO this doesn't optimize anything
   const onCellClick = React.useCallback(
     (sel: SequenceIndex) => () => dispatch({ type: "setSequencerSelection", selection: sel }),
+    []
+  )
+  const onTableKey = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      switch (e.key) {
+        case "Backspace":
+        case "Delete":
+          e.preventDefault()
+          dispatch({ type: "setSelectedStep", step: { type: "empty" } })
+          break
+        case "Enter":
+          e.preventDefault()
+          dispatch({ type: "setSelectedStep", step: { type: "hold" } })
+      }
+    },
     []
   )
   const onStartClick = React.useCallback(
@@ -36,7 +52,10 @@ export function Sequencer({ dispatch, sequence, pitches, selection, isPlaying } 
           : <button onClick={onStartClick}>▶</button>
       }
     </div>
-    <Table>
+    <div>
+      <small>Press <kbd>Return</kbd> to hold a note.</small>
+    </div>
+    <Table tabIndex={0} onKeyDown={onTableKey}>
       <thead>
         <tr>
           { [ ...Array(sequence.numberOfTracks) ].map((_, i) =>
@@ -50,13 +69,12 @@ export function Sequencer({ dispatch, sequence, pitches, selection, isPlaying } 
             return <Row key={i}>
               { stepsPerTrack.map((step, j) => {
                   const isSelected = isStepSelected && selection !== undefined && selection.track === j
-                  return <StepCell
+                  const content = cellContent(step, pitches)
+                  return <Cell
                     key={j}
-                    step={step}
-                    pitches={pitches}
                     isSelected={isSelected}
                     onClick={onCellClick({ step: i, track: j })}
-                  />
+                  >{content}</Cell>
               }) }
             </Row>
         }) }
@@ -65,26 +83,26 @@ export function Sequencer({ dispatch, sequence, pitches, selection, isPlaying } 
   </>
 }
 
-interface StepCellProps {
-  step: Step,
-  pitches: ReadonlyArray<Pitch>,
-  isSelected: boolean,
-  onClick: () => void
-}
-
-function StepCell({ step, pitches, isSelected, onClick }: StepCellProps) {
+function cellContent(step: Step, pitches: ReadonlyArray<Pitch>) {
   switch (step.type) {
-    case "empty": return <Cell isSelected={isSelected} onClick={onClick}>_</Cell>
+    case "empty":
+      return "_"
     case "pitch":
       const pitch = pitches[step.pitchIndex]
       const note = notesIn12Edo[pitch.tone.nearest12TetTone]
       const cents = diffText(pitch.tone)
-      return <Cell isSelected={isSelected} onClick={onClick}>{note}<sub>{pitch.octave}</sub> {cents}</Cell>
+      return <>{note}<sub>{pitch.octave}</sub> {cents}</>
+    case "hold":
+      return "|"
   }
 }
 
 const Table = styled.table`
   border-collapse: separate; border-spacing: 0;
+
+  &:focus {
+    outline: 1px solid #e0e0e0;
+  }
 `
 
 const Row = styled.tr`

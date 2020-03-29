@@ -10,6 +10,7 @@ export interface Sequence {
 export type Step =
   { type: "empty" }
   | { type: "pitch", pitchIndex: number }
+  | { type: "hold" }
 
 export interface SequenceIndex {
   step: number,
@@ -53,6 +54,7 @@ function trackToEvents(
   sequence: Sequence
 ): ReadonlyArray<StepEvent> {
   const events: Array<StepEvent> = []
+  let currentEventForHold: StepEvent | undefined
   sequence.steps.forEach((stepsPerTrack, stepIndex) => {
     const step = stepsPerTrack[trackIndex]
     let event
@@ -63,6 +65,15 @@ function trackToEvents(
           time: sequence.secondsPerStep * stepIndex,
           duration: sequence.secondsPerStep,
           frequency: pitches[step.pitchIndex].frequency
+        }
+        currentEventForHold = event
+        break
+      case "empty":
+        currentEventForHold = undefined
+        break
+      case "hold":
+        if (currentEventForHold !== undefined) {
+          currentEventForHold.duration += sequence.secondsPerStep
         }
         break
     }
