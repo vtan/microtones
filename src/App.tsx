@@ -11,7 +11,8 @@ export function App() {
   const [state, dispatch] = React.useReducer(appReducer, initialAppState)
   const
     { openPanel, numberOfSubdivisions, waveform
-    , tones, pitches, keys, pressedKeyIndices, pressedToneMultipliers, sequence
+    , tones, pitches, keys, pressedKeyIndices, pressedToneMultipliers
+    , sequence, sequencerSelection, isSequencerPlaying
     } = state
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
@@ -31,7 +32,12 @@ export function App() {
       </div>
     </div>
     { openPanel === "sequencer"
-        ? <Sequencer sequence={sequence} pitches={pitches} />
+        ? <Sequencer
+            dispatch={dispatch}
+            sequence={sequence}
+            pitches={pitches}
+            selection={sequencerSelection}
+            isPlaying={isSequencerPlaying} />
       : openPanel === "notes"
         ? <ToneTable tones={tones} pressedToneMultipliers={pressedToneMultipliers} />
       : null

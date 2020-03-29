@@ -1,55 +1,68 @@
 import * as React from "react"
-
-import { Pitch } from "./Pitch"
-import { Sequence, Step } from "./Sequence"
 import styled from "styled-components"
+
+import { AppDispatch } from "./AppReducer"
+import { Pitch } from "./Pitch"
+import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText } from "./Tone"
 import { selectionColor } from "./Util"
 
 interface Props {
+  dispatch: AppDispatch,
   sequence: Sequence,
-  pitches: ReadonlyArray<Pitch>
+  pitches: ReadonlyArray<Pitch>,
+  selection?: SequenceIndex,
+  isPlaying: boolean
 }
 
-interface SelectionIndex {
-  step: number,
-  track: number
-}
-
-export function Sequencer({ sequence, pitches } : Props) {
-  const [selection, setSelection] = React.useState<SelectionIndex | undefined>(undefined)
-
+export function Sequencer({ dispatch, sequence, pitches, selection, isPlaying } : Props) {
   const onCellClick = React.useCallback(
-    (sel: SelectionIndex) => () => setSelection(sel),
-    [setSelection]
+    (sel: SequenceIndex) => () => dispatch({ type: "setSequencerSelection", selection: sel }),
+    []
+  )
+  const onStartClick = React.useCallback(
+    () => dispatch({ type: "startSequencer" }),
+    []
+  )
+  const onStopClick = React.useCallback(
+    () => dispatch({ type: "stopSequencer" }),
+    []
   )
 
-  return <Table>
-    <thead>
-      <tr>
-        { [ ...Array(sequence.numberOfTracks) ].map((_, i) =>
-            <th key={i}>Track {i + 1}</th>
-        ) }
-      </tr>
-    </thead>
-    <tbody>
-      { sequence.steps.map((stepsPerTrack, i) => {
-          const isStepSelected = selection !== undefined && selection.step === i
-          return <Row key={i}>
-            { stepsPerTrack.map((step, j) => {
-                const isSelected = isStepSelected && selection !== undefined && selection.track === j
-                return <StepCell
-                  key={j}
-                  step={step}
-                  pitches={pitches}
-                  isSelected={isSelected}
-                  onClick={onCellClick({ step: i, track: j })}
-                />
-            }) }
-          </Row>
-      }) }
-    </tbody>
-  </Table>
+  return <>
+    <div>
+      { isPlaying
+          ? <button onClick={onStopClick}>⏹</button>
+          : <button onClick={onStartClick}>▶</button>
+      }
+    </div>
+    <Table>
+      <thead>
+        <tr>
+          { [ ...Array(sequence.numberOfTracks) ].map((_, i) =>
+              <th key={i}>Track {i + 1}</th>
+          ) }
+        </tr>
+      </thead>
+      <tbody>
+        { sequence.steps.map((stepsPerTrack, i) => {
+            const isStepSelected = selection !== undefined && selection.step === i
+            return <Row key={i}>
+              { stepsPerTrack.map((step, j) => {
+                  const isSelected = isStepSelected && selection !== undefined && selection.track === j
+                  return <StepCell
+                    key={j}
+                    step={step}
+                    pitches={pitches}
+                    isSelected={isSelected}
+                    onClick={onCellClick({ step: i, track: j })}
+                  />
+              }) }
+            </Row>
+        }) }
+      </tbody>
+    </Table>
+  </>
 }
 
 interface StepCellProps {
@@ -62,7 +75,7 @@ interface StepCellProps {
 function StepCell({ step, pitches, isSelected, onClick }: StepCellProps) {
   switch (step.type) {
     case "empty": return <Cell isSelected={isSelected} onClick={onClick}>_</Cell>
-    case "tone":
+    case "pitch":
       const pitch = pitches[step.pitchIndex]
       const note = notesIn12Edo[pitch.tone.nearest12TetTone]
       const cents = diffText(pitch.tone)

@@ -3,6 +3,7 @@
     "baseUrl": ".",
     "module": "commonjs",
     "target": "es2015",
+    "lib": [ "ES2019", "DOM" ],
     "strict": true,
     "noUnusedLocals": true,
     "removeComments": true,
