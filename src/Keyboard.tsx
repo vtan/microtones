@@ -73,12 +73,16 @@ export function Keyboard(props: Props) {
 
   const { keys, pressedKeyIndices } = props
 
-  return <svg width="100%" height="120">
+  return <Svg width="100%" height="120">
     { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
     { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
     { keys.map((key, index) => renderKeyLabels(key, index)) }
-  </svg>
+  </Svg>
 }
+
+const Svg = styled.svg`
+  margin-bottom: 1rem;
+`
 
 const KeyLabel = styled.text`
   pointer-events: none;

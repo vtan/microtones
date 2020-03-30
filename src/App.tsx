@@ -1,11 +1,13 @@
 import * as React from "react"
+import styled from "styled-components"
 
-import { appReducer, initialAppState, Panel } from "./AppReducer"
+import { appReducer, initialAppState } from "./AppReducer"
 import { addGlobalKeyListeners } from "./GlobalKeyListener"
 import { Keyboard } from "./Keyboard"
-import { Settings } from "./Settings"
-import { Sequencer } from "./Sequencer"
-import { ToneTable } from "./ToneTable"
+import { Navigation } from "./Navigation"
+import { SequencerPanel } from "./SequencerPanel"
+import { SynthPanel } from "./SynthPanel"
+import { TuningPanel } from "./TuningPanel"
 
 export function App() {
   const [state, dispatch] = React.useReducer(appReducer, initialAppState)
@@ -17,30 +19,33 @@ export function App() {
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
 
-  const setOpenPanel = React.useCallback(
-    (panel: Panel) => () => dispatch({ type: "openPanel", panel }),
-    []
-  )
-
   return <>
-    <Settings dispatch={dispatch} numberOfSubdivisions={numberOfSubdivisions} waveform={waveform} />
-    <Keyboard dispatch={dispatch} keys={keys} pressedKeyIndices={pressedKeyIndices} />
-    <div>
-      <div>
-        <button onClick={setOpenPanel("sequencer")}>Sequencer</button>
-        <button onClick={setOpenPanel("notes")}>Notes</button>
-      </div>
-    </div>
-    { openPanel === "sequencer"
-        ? <Sequencer
-            dispatch={dispatch}
-            sequence={sequence}
-            pitches={pitches}
-            selection={sequencerSelection}
-            isPlaying={isSequencerPlaying} />
-      : openPanel === "notes"
-        ? <ToneTable tones={tones} pressedToneMultipliers={pressedToneMultipliers} />
-      : null
-    }
+    <Navigation dispatch={dispatch} openPanel={openPanel} />
+    <Container>
+      <Keyboard dispatch={dispatch} keys={keys} pressedKeyIndices={pressedKeyIndices} />
+      { openPanel === "sequencer"
+          ? <SequencerPanel
+              dispatch={dispatch}
+              sequence={sequence}
+              pitches={pitches}
+              selection={sequencerSelection}
+              isPlaying={isSequencerPlaying} />
+        : openPanel === "tuning"
+          ? <TuningPanel
+              dispatch={dispatch}
+              numberOfSubdivisions={numberOfSubdivisions}
+              tones={tones}
+              pressedToneMultipliers={pressedToneMultipliers} />
+        : openPanel === "synth"
+          ? <SynthPanel
+              dispatch={dispatch}
+              waveform={waveform} />
+        : null
+      }
+    </Container>
   </>
 }
+
+const Container = styled.div`
+  margin: 0 1rem;
+`

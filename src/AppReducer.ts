@@ -9,7 +9,7 @@ export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
 export const waveforms: ReadonlyArray<Waveform> = ["triangle", "sawtooth", "square", "sine", "sine3"]
 
-export type Panel = "sequencer" | "notes"
+export type Panel = "sequencer" | "tuning" | "synth"
 
 export interface AppState {
   openPanel: Panel,
@@ -27,14 +27,16 @@ export interface AppState {
   isSequencerPlaying: boolean
 }
 
-function initializeState(numberOfSubdivisions: number): AppState {
+export const initialAppState: AppState = initializeState()
+
+function initializeState(): AppState {
+  const numberOfSubdivisions = 12
   const waveform = "triangle"
   const synth = createSynth(waveform)
-  const tones = equalOctaveSubdivisions(numberOfSubdivisions)
-  const pitches = tonesToPitches(261.6256, 4, 2, tones)
-  const keys = keyboardFromPitches(pitches)
+  const { tones, pitches, keys } = tonesPitchesKeys(numberOfSubdivisions)
+
   return {
-    openPanel: "sequencer",
+    openPanel: "tuning",
     synth,
     waveform,
     numberOfSubdivisions,
@@ -61,18 +63,23 @@ function createSynth(waveform: Waveform): PolySynth {
   }).toDestination()
 }
 
-export const initialAppState: AppState = initializeState(12)
+function tonesPitchesKeys(numberOfSubdivisions: number) {
+  const tones = equalOctaveSubdivisions(numberOfSubdivisions)
+  const pitches = tonesToPitches(261.6256, 4, 3, tones)
+  const keys = keyboardFromPitches(pitches)
+  return { tones, pitches, keys }
+}
 
 export type AppAction =
   { type: "openPanel", panel: Panel }
   | { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
-  | { type: "setWaveform", waveform: AppState["waveform"] }
+  | { type: "setWaveform", waveform: Waveform }
   | { type: "triggerNoteOn", keyIndex: number }
   | { type: "triggerNoteOff", keyIndex: number }
   | { type: "setSequencerSelection", selection?: SequenceIndex }
+  | { type: "moveSequencerSelection", diff: SequenceIndex }
   | { type: "setSelectedStep", step: Step }
-  | { type: "startSequencer" }
-  | { type: "stopSequencer" }
+  | { type: "toggleSequencerPlaying" }
 
 export type AppDispatch = (_: AppAction) => void
 
@@ -82,18 +89,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, openPanel: action.panel }
 
     case "setNumberOfSubdivisions":
-      state.synth.releaseAll()
-      return initializeState(action.numberOfSubdivisions)
+      stopSequencer(state)
+      return {
+        ...state,
+        numberOfSubdivisions: action.numberOfSubdivisions,
+        ...tonesPitchesKeys(action.numberOfSubdivisions),
+        sequence: emptySequence,
+        isSequencerPlaying: false
+      }
 
     case "setWaveform":
       if (action.waveform !== state.waveform) {
         const { waveform } = action
-        Transport.stop()
-        Transport.cancel()
-        state.synth.releaseAll()
-        state.synth.dispose()
-        const synth = createSynth(waveform)
-        return { ...state, synth, waveform, isSequencerPlaying: false }
+        state.synth.set({ oscillator: { type: waveform } })
+        return { ...state, waveform }
       } else {
         return state
       }
@@ -134,6 +143,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "setSequencerSelection":
       return { ...state, sequencerSelection: action.selection }
 
+    case "moveSequencerSelection":
+      if (state.sequencerSelection === undefined) {
+        return state
+      } else {
+        const sel = {
+          step: state.sequencerSelection.step + action.diff.step,
+          track: state.sequencerSelection.track + action.diff.track
+        }
+        if (
+          sel.step >= 0 && sel.step < state.sequence.steps.length &&
+          sel.track >= 0 && sel.track < state.sequence.numberOfTracks
+        ) {
+          return { ...state, sequencerSelection: sel }
+        } else {
+          return state
+        }
+      }
+
     case "setSelectedStep":
       if (state.sequencerSelection === undefined) {
         return state
@@ -143,25 +170,34 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         return { ...state, sequence }
       }
 
-    case "startSequencer": {
-      const events = [ ...sequenceToEvents(state.pitches, state.sequence) ]
-      const part = new Part(
-        (time, event) => state.synth.triggerAttackRelease(event.frequency, event.duration, time),
-        events
-      )
-      const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
-      Transport.cancel()
-      Transport.start()
-      Transport.setLoopPoints(0, loopLength)
-      Transport.loop = true
-      part.start(0)
-      return { ...state, isSequencerPlaying: true }
+    case "toggleSequencerPlaying": {
+      const isSequencerPlaying = !state.isSequencerPlaying
+      if (isSequencerPlaying) {
+        startSequencer(state)
+      } else {
+        stopSequencer(state)
+      }
+      return { ...state, isSequencerPlaying }
     }
-
-    case "stopSequencer":
-      Transport.stop()
-      Transport.cancel()
-      state.synth.releaseAll()
-      return { ...state, isSequencerPlaying: false }
   }
+}
+
+function startSequencer(state: AppState): void {
+  const events = [ ...sequenceToEvents(state.pitches, state.sequence) ]
+  const part = new Part(
+    (time, event) => state.synth.triggerAttackRelease(event.frequency, event.duration, time),
+    events
+  )
+  const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
+  Transport.cancel()
+  Transport.start()
+  Transport.setLoopPoints(0, loopLength)
+  Transport.loop = true
+  part.start(0)
+}
+
+function stopSequencer(state: AppState): void {
+  Transport.stop()
+  Transport.cancel()
+  state.synth.releaseAll()
 }

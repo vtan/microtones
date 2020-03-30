@@ -1,23 +1,40 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { Tone, toneColor, notesIn12Edo, diffText } from "./Tone"
+import { AppDispatch } from "./AppReducer"
+import { Label } from "./InputComponents"
 import { short12TetKeys } from "./Key"
+import { Tone, toneColor, notesIn12Edo, diffText } from "./Tone"
 import { grayscaleColor, selectionColor } from "./Util"
 
 export interface Props {
+  dispatch: AppDispatch,
+  numberOfSubdivisions: number,
   tones: ReadonlyArray<Tone>,
   pressedToneMultipliers: ReadonlyArray<number>
 }
 
-export function ToneTable({ tones, pressedToneMultipliers }: Props) {
+export function TuningPanel({ dispatch, numberOfSubdivisions, tones, pressedToneMultipliers }: Props) {
   const toneColors = React.useMemo(
     () => tones.map(tone =>
       grayscaleColor(toneColor(tone, short12TetKeys.indexOf(tone.nearest12TetTone) < 0))
     ),
     [tones]
   )
-  return <Container>
+
+  return <>
+    <div>
+      <Label>Tuning</Label>
+      <select
+        onChange={ e => dispatch({ type: "setNumberOfSubdivisions", numberOfSubdivisions: Number.parseInt(e.target.value) }) }
+        value={numberOfSubdivisions}
+      >
+        { [12,17,19,24,31,5,6,7,8,9,10,11,13,14,15,16,18,20,21,22,23].map(n =>
+            <option key={n} value={n}>{n}-EDO</option>
+        ) }
+      </select>
+      <Hint>Changing the tuning clears the sequencer</Hint>
+    </div>
     <Table>
       <tbody>
         { tones.map((tone, index) => {
@@ -31,19 +48,21 @@ export function ToneTable({ tones, pressedToneMultipliers }: Props) {
         }) }
       </tbody>
     </Table>
-  </Container>
+  </>
 }
 
-const Container = styled.div`
-  display: flex;
-  line-height: 1.5rem;
+const Hint = styled.p`
+  margin: 0.25rem 0 0 0;
+  color: #666;
+  font-size: 12px;
 `
 
 const Table = styled.table`
-  margin: 0;
+  margin: 0.5rem 0 0 0;
   padding: 0;
   border-collapse: collapse;
   border-spacing: 0;
+  line-height: 1.5rem;
 
   & tr {
     margin: 0;
