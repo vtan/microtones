@@ -3,13 +3,16 @@ import { Part, PolySynth, Synth, Transport } from "tone"
 import { Key, keyboardFromPitches } from "./Key"
 import { tonesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Tone } from "./Tone"
-import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step } from "./Sequence"
+import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
 export const waveforms: ReadonlyArray<Waveform> = ["triangle", "sawtooth", "square", "sine", "sine3"]
 
 export type Panel = "sequencer" | "tuning" | "synth"
+
+const minOctave: number = 0
+const maxOctave: number = 8
 
 export interface AppState {
   openPanel: Panel,
@@ -24,16 +27,23 @@ export interface AppState {
   pressedToneMultipliers: ReadonlyArray<number>,
   sequence: Sequence,
   sequencerSelection?: SequenceIndex,
-  isSequencerPlaying: boolean
+  sequencerPlayback?: SequencerPlaybackState
+}
+
+export interface SequencerPlaybackState {
+  synth: PolySynth,
+  stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>],
+  currentStepIndex: number
 }
 
 export const initialAppState: AppState = initializeState()
 
 function initializeState(): AppState {
   const numberOfSubdivisions = 12
+  const keyboardOffset = 4 * numberOfSubdivisions
   const waveform = "triangle"
   const synth = createSynth(waveform)
-  const { tones, pitches, keys } = tonesPitchesKeys(numberOfSubdivisions)
+  const { tones, pitches, keys } = tonesPitchesKeys(numberOfSubdivisions, keyboardOffset)
 
   return {
     openPanel: "tuning",
@@ -43,16 +53,16 @@ function initializeState(): AppState {
     tones,
     pitches,
     keys,
-    keyboardOffset: 0,
+    keyboardOffset,
     pressedKeyIndices: [],
     pressedToneMultipliers: [],
-    sequence: emptySequence,
-    isSequencerPlaying: false
+    sequence: emptySequence
   }
 }
 
 function createSynth(waveform: Waveform): PolySynth {
   return new PolySynth(Synth, {
+    volume: -6,
     oscillator: { type: waveform },
     envelope: {
       attack: 0.005,
@@ -63,23 +73,40 @@ function createSynth(waveform: Waveform): PolySynth {
   }).toDestination()
 }
 
-function tonesPitchesKeys(numberOfSubdivisions: number) {
+function keyboardOctavesForTuning(numberOfSubdivisions: number): number {
+  if (numberOfSubdivisions <= 10) {
+    return 4
+  } else if (numberOfSubdivisions <= 15) {
+    return 3
+  } else if (numberOfSubdivisions <= 21) {
+    return 2
+  } else {
+    return 1
+  }
+}
+
+function tonesPitchesKeys(numberOfSubdivisions: number, keyboardOffset: number) {
   const tones = equalOctaveSubdivisions(numberOfSubdivisions)
-  const pitches = tonesToPitches(261.6256, 4, 3, tones)
-  const keys = keyboardFromPitches(pitches)
+  // Hacky: + 2 below so the highest C is also included
+  const pitches = tonesToPitches(16.0352, minOctave, maxOctave - minOctave + 2, tones)
+  const octaves = keyboardOctavesForTuning(numberOfSubdivisions)
+  const keyPitches = pitches.slice(keyboardOffset, keyboardOffset + octaves * numberOfSubdivisions + 1)
+  const keys = keyboardFromPitches(keyPitches)
   return { tones, pitches, keys }
 }
 
 export type AppAction =
   { type: "openPanel", panel: Panel }
   | { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
+  | { type: "setKeyboardOffset", keyboardOffset: number }
   | { type: "setWaveform", waveform: Waveform }
   | { type: "triggerNoteOn", keyIndex: number }
   | { type: "triggerNoteOff", keyIndex: number }
   | { type: "setSequencerSelection", selection?: SequenceIndex }
   | { type: "moveSequencerSelection", diff: SequenceIndex }
   | { type: "setSelectedStep", step: Step }
-  | { type: "toggleSequencerPlaying" }
+  | { type: "toggleSequencerPlaying", dispatch: AppDispatch }
+  | { type: "setSequencerPlaybackStepIndex", stepIndex: number }
 
 export type AppDispatch = (_: AppAction) => void
 
@@ -88,20 +115,36 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "openPanel":
       return { ...state, openPanel: action.panel }
 
-    case "setNumberOfSubdivisions":
+    case "setNumberOfSubdivisions": {
+      const keyboardOffset = 4 * action.numberOfSubdivisions
       stopSequencer(state)
       return {
         ...state,
         numberOfSubdivisions: action.numberOfSubdivisions,
-        ...tonesPitchesKeys(action.numberOfSubdivisions),
+        ...tonesPitchesKeys(action.numberOfSubdivisions, keyboardOffset),
+        keyboardOffset,
         sequence: emptySequence,
-        isSequencerPlaying: false
+        sequencerPlayback: undefined
       }
+    }
+
+    case "setKeyboardOffset": {
+      // TODO duplication
+      const { pitches, numberOfSubdivisions } = state
+      const { keyboardOffset } = action
+      const octaves = keyboardOctavesForTuning(numberOfSubdivisions)
+      const keyPitches = pitches.slice(keyboardOffset, keyboardOffset + octaves * numberOfSubdivisions + 1)
+      const keys = keyboardFromPitches(keyPitches)
+      return { ...state, keyboardOffset, keys }
+    }
 
     case "setWaveform":
       if (action.waveform !== state.waveform) {
         const { waveform } = action
         state.synth.set({ oscillator: { type: waveform } })
+        if (state.sequencerPlayback !== undefined) {
+          state.sequencerPlayback.synth.set({ oscillator: { type: waveform } })
+        }
         return { ...state, waveform }
       } else {
         return state
@@ -116,14 +159,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
         const pressedKeyIndices = [ ...state.pressedKeyIndices, action.keyIndex ]
         const pressedToneMultipliers = pressedKeyIndices.map(i => state.keys[i].pitch.tone.rootMultiplier)
-        const sequence = state.openPanel === "sequencer" && state.sequencerSelection !== undefined
-          ? setInSequence(
-              state.sequencerSelection,
-              { type: "pitch", pitchIndex: action.keyIndex - state.keyboardOffset },
-              state.sequence
-            )
-          : state.sequence
-        return { ...state, pressedKeyIndices, pressedToneMultipliers, sequence }
+        const updateSequence =
+          state.openPanel === "sequencer" && state.sequencerSelection !== undefined
+            ? (st: AppState) =>
+                changeSelectedSequencerStep(st, { type: "pitch", pitchIndex: action.keyIndex + state.keyboardOffset })
+            : (st: AppState) => st
+        return updateSequence({ ...state, pressedKeyIndices, pressedToneMultipliers })
       }
     }
 
@@ -145,7 +186,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "moveSequencerSelection":
       if (state.sequencerSelection === undefined) {
-        return state
+        return { ...state, sequencerSelection: { step: 0, track: 0 }}
       } else {
         const sel = {
           step: state.sequencerSelection.step + action.diff.step,
@@ -162,31 +203,55 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
 
     case "setSelectedStep":
-      if (state.sequencerSelection === undefined) {
-        return state
-      } else {
-        // TODO update part so the edited sequence is played
-        const sequence = setInSequence(state.sequencerSelection, action.step, state.sequence)
-        return { ...state, sequence }
-      }
+      return changeSelectedSequencerStep(state, action.step)
 
     case "toggleSequencerPlaying": {
-      const isSequencerPlaying = !state.isSequencerPlaying
-      if (isSequencerPlaying) {
-        startSequencer(state)
+      if (state.sequencerPlayback === undefined) {
+        const sequencerPlayback = startSequencer(state, action.dispatch)
+        return { ...state, sequencerPlayback }
       } else {
         stopSequencer(state)
+        return { ...state, sequencerPlayback: undefined }
       }
-      return { ...state, isSequencerPlaying }
     }
+
+    case "setSequencerPlaybackStepIndex":
+      if (state.sequencerPlayback === undefined) {
+        return state
+      } else {
+        const sequencerPlayback = { ...state.sequencerPlayback, currentStepIndex: action.stepIndex }
+        return { ...state, sequencerPlayback }
+      }
   }
 }
 
-function startSequencer(state: AppState): void {
-  const events = [ ...sequenceToEvents(state.pitches, state.sequence) ]
+function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
+  if (state.sequencerSelection === undefined) {
+    return state
+  } else {
+    const sequence = setInSequence(state.sequencerSelection, newStep, state.sequence)
+    if (state.sequencerPlayback !== undefined){
+      state.sequencerPlayback.stepEventsRef[0] = sequenceToEvents(state.pitches, sequence)
+    }
+    return { ...state, sequence }
+  }
+
+}
+
+function startSequencer(state: AppState, dispatch: AppDispatch): SequencerPlaybackState {
+  const synth = createSynth(state.waveform)
+
+  const stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>] =
+    [sequenceToEvents(state.pitches, state.sequence)]
+  const stepTimes = [ ...sequenceToTimes(state.sequence) ]
   const part = new Part(
-    (time, event) => state.synth.triggerAttackRelease(event.frequency, event.duration, time),
-    events
+    (time, { stepIndex }) => {
+      for (const event of stepEventsRef[0][stepIndex]) {
+        synth.triggerAttackRelease(event.frequency, event.duration, time)
+      }
+      dispatch({ type: "setSequencerPlaybackStepIndex", stepIndex })
+    },
+    stepTimes
   )
   const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
   Transport.cancel()
@@ -194,10 +259,16 @@ function startSequencer(state: AppState): void {
   Transport.setLoopPoints(0, loopLength)
   Transport.loop = true
   part.start(0)
+
+  return { synth, stepEventsRef, currentStepIndex: 0 }
 }
 
 function stopSequencer(state: AppState): void {
   Transport.stop()
   Transport.cancel()
-  state.synth.releaseAll()
+  if (state.sequencerPlayback !== undefined) {
+    const synth = state.sequencerPlayback.synth
+    synth.releaseAll()
+    synth.disconnect()
+  }
 }

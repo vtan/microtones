@@ -13,8 +13,8 @@ export function App() {
   const [state, dispatch] = React.useReducer(appReducer, initialAppState)
   const
     { openPanel, numberOfSubdivisions, waveform
-    , tones, pitches, keys, pressedKeyIndices, pressedToneMultipliers
-    , sequence, sequencerSelection, isSequencerPlaying
+    , tones, pitches, keys, keyboardOffset, pressedKeyIndices, pressedToneMultipliers
+    , sequence, sequencerSelection, sequencerPlayback
     } = state
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
@@ -22,14 +22,19 @@ export function App() {
   return <>
     <Navigation dispatch={dispatch} openPanel={openPanel} />
     <Container>
-      <Keyboard dispatch={dispatch} keys={keys} pressedKeyIndices={pressedKeyIndices} />
+      <Keyboard
+        dispatch={dispatch}
+        keys={keys}
+        keyboardOffset={keyboardOffset}
+        numberOfSubdivisons={numberOfSubdivisions}
+        pressedKeyIndices={pressedKeyIndices} />
       { openPanel === "sequencer"
           ? <SequencerPanel
               dispatch={dispatch}
               sequence={sequence}
               pitches={pitches}
               selection={sequencerSelection}
-              isPlaying={isSequencerPlaying} />
+              playback={sequencerPlayback} />
         : openPanel === "tuning"
           ? <TuningPanel
               dispatch={dispatch}

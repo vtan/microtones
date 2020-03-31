@@ -17,9 +17,12 @@ export interface SequenceIndex {
   track: number
 }
 
-export interface StepEvent {
-  index: number,
+export interface StepTime {
   time: number,
+  stepIndex: number
+}
+
+export interface StepEvent {
   duration: number,
   frequency: number
 }
@@ -39,21 +42,33 @@ export function setInSequence(index: SequenceIndex, newStep: Step, sequence: Seq
   return { ...sequence, steps }
 }
 
+export function sequenceToTimes(sequence: Sequence): ReadonlyArray<StepTime> {
+  return sequence.steps.map((_, stepIndex) => ({
+    time: sequence.secondsPerStep * stepIndex,
+    stepIndex: stepIndex
+  }))
+}
+
 export function sequenceToEvents(
   pitches: ReadonlyArray<Pitch>,
   sequence: Sequence
-): ReadonlyArray<StepEvent> {
-  return [ ...Array(sequence.numberOfTracks) ].flatMap((_, trackIndex) =>
-    trackToEvents(pitches, trackIndex, sequence)
-  )
+): ReadonlyArray<ReadonlyArray<StepEvent>> {
+  const eventsPerStep: Array<Array<StepEvent>> = sequence.steps.map(_ => [])
+  const trackIndices = [ ...Array(sequence.numberOfTracks)  ].map((_, i) => i)
+  trackIndices.forEach((_, trackIndex) => {
+      trackToEvents(pitches, trackIndex, sequence).forEach(([stepIndex, event]) => {
+        eventsPerStep[stepIndex].push(event)
+      })
+  })
+  return eventsPerStep
 }
 
 function trackToEvents(
   pitches: ReadonlyArray<Pitch>,
   trackIndex: number,
   sequence: Sequence
-): ReadonlyArray<StepEvent> {
-  const events: Array<StepEvent> = []
+): ReadonlyArray<[number, StepEvent]> {
+  const eventsWithIndex: Array<[number, StepEvent]> = []
   let currentEventForHold: StepEvent | undefined
   sequence.steps.forEach((stepsPerTrack, stepIndex) => {
     const step = stepsPerTrack[trackIndex]
@@ -61,8 +76,6 @@ function trackToEvents(
     switch (step.type) {
       case "pitch":
         event = {
-          index: stepIndex,
-          time: sequence.secondsPerStep * stepIndex,
           duration: sequence.secondsPerStep,
           frequency: pitches[step.pitchIndex].frequency
         }
@@ -78,8 +91,8 @@ function trackToEvents(
         break
     }
     if (event !== undefined) {
-      events.push(event)
+      eventsWithIndex.push([stepIndex, event])
     }
   })
-  return events
+  return eventsWithIndex
 }

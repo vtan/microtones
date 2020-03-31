@@ -2,6 +2,7 @@ import * as React from "react"
 import styled from "styled-components"
 
 import { AppDispatch } from "./AppReducer"
+import { Label } from "./InputComponents"
 import { Key } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
 import { notesIn12Edo } from "./Tone"
@@ -11,6 +12,8 @@ const keyWidthScale = 36
 export interface Props {
   dispatch: AppDispatch,
   keys: ReadonlyArray<Key>,
+  numberOfSubdivisons: number,
+  keyboardOffset: number,
   pressedKeyIndices: ReadonlyArray<number>
 }
 
@@ -71,17 +74,40 @@ export function Keyboard(props: Props) {
     []
   )
 
-  const { keys, pressedKeyIndices } = props
+  const { keys, pressedKeyIndices, keyboardOffset, numberOfSubdivisons } = props
 
-  return <Svg width="100%" height="120">
-    { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
-    { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
-    { keys.map((key, index) => renderKeyLabels(key, index)) }
-  </Svg>
+  const octave = React.useMemo(
+    () => keyboardOffset / numberOfSubdivisons,
+    [keyboardOffset, numberOfSubdivisons]
+  )
+  const onOctaveChange = React.useCallback(
+    e => dispatch({
+      type: "setKeyboardOffset",
+      keyboardOffset: numberOfSubdivisons * parseInt(e.target.value)
+    }),
+    [numberOfSubdivisons]
+  )
+
+  return <Container>
+    <Svg>
+      { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
+      { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
+      { keys.map((key, index) => renderKeyLabels(key, index)) }
+    </Svg>
+    <div>
+      <Label>Octave</Label>
+      <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
+    </div>
+  </Container>
 }
 
-const Svg = styled.svg`
+const Container = styled.div`
   margin-bottom: 1rem;
+`
+
+const Svg = styled.svg`
+  width: 100%;
+  height: 120px;
 `
 
 const KeyLabel = styled.text`

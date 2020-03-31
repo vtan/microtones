@@ -1,21 +1,22 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch, AppAction } from "./AppReducer"
+import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText } from "./Tone"
-import { selectionColor } from "./Util"
+import { selectionColor, playbackColor } from "./Util"
+import { Hint } from "./InputComponents"
 
 interface Props {
   dispatch: AppDispatch,
   sequence: Sequence,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
-  isPlaying: boolean
+  playback?: SequencerPlaybackState
 }
 
-export function SequencerPanel({ dispatch, sequence, pitches, selection, isPlaying } : Props) {
+export function SequencerPanel({ dispatch, sequence, pitches, selection, playback } : Props) {
   React.useEffect(
     () => {
       const listener = keyDownListener(dispatch)
@@ -33,12 +34,12 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, isPlayi
 
   return <>
     <Toolbar>
-      <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying" }) }>
-        { isPlaying ? "◼" : "▶" }
+      <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }>
+        { playback === undefined ? "▶" : "◼" }
       </Button>
       <Separator />
       <Button onClick={ () => deleteSelectedStep(dispatch) }>Delete</Button>
-      <Button onClick={ () => holdSelectedStep(dispatch) }>Hold (↵)</Button>
+      <Button onClick={ () => holdSelectedStep(dispatch) }>Hold</Button>
     </Toolbar>
     <Table>
       <thead>
@@ -51,7 +52,8 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, isPlayi
       <tbody>
         { sequence.steps.map((stepsPerTrack, i) => {
             const isStepSelected = selection !== undefined && selection.step === i
-            return <Row key={i}>
+            const isCurrentlyPlayed = playback !== undefined && playback.currentStepIndex === i
+            return <Row key={i} isCurrentlyPlayed={isCurrentlyPlayed}>
               { stepsPerTrack.map((step, j) => {
                   const isSelected = isStepSelected && selection !== undefined && selection.track === j
                   const content = cellContent(step, pitches)
@@ -65,6 +67,7 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, isPlayi
         }) }
       </tbody>
     </Table>
+    <Hint>Use the keyboard to enter & delete notes, hold notes (<kbd>↵</kbd>), start/stop playback (<kbd>Space</kbd>) and move the selection</Hint>
   </>
 }
 
@@ -90,15 +93,15 @@ function holdSelectedStep(dispatch: AppDispatch): void {
   dispatch({ type: "setSelectedStep", step: { type: "hold" } })
 }
 
-const keyToAction: Record<string, AppAction> = {
-  "Backspace": { type: "setSelectedStep", step: { type: "empty" } },
-  "Delete": { type: "setSelectedStep", step: { type: "empty" } },
-  "Enter": { type: "setSelectedStep", step: { type: "hold" } },
-  "ArrowLeft": { type: "moveSequencerSelection", diff: { track: -1, step: 0 } },
-  "ArrowRight": { type: "moveSequencerSelection", diff: { track: 1, step: 0 } },
-  "ArrowUp": { type: "moveSequencerSelection", diff: { step: -1, track: 0 } },
-  "ArrowDown": { type: "moveSequencerSelection", diff: { step: 1, track: 0 } },
-  "Space": { type: "toggleSequencerPlaying" }
+const keyToAction: Record<string, (_: AppDispatch) => AppAction> = {
+  "Backspace": () => ({ type: "setSelectedStep", step: { type: "empty" } }),
+  "Delete": () =>({ type: "setSelectedStep", step: { type: "empty" } }),
+  "Enter": () => ({ type: "setSelectedStep", step: { type: "hold" } }),
+  "ArrowLeft": () => ({ type: "moveSequencerSelection", diff: { track: -1, step: 0 } }),
+  "ArrowRight": () => ({ type: "moveSequencerSelection", diff: { track: 1, step: 0 } }),
+  "ArrowUp": () => ({ type: "moveSequencerSelection", diff: { step: -1, track: 0 } }),
+  "ArrowDown": () => ({ type: "moveSequencerSelection", diff: { step: 1, track: 0 } }),
+  " ": dispatch => ({ type: "toggleSequencerPlaying", dispatch })
 }
 
 const keyDownListener = (dispatch: AppDispatch) => (e: KeyboardEvent): void => {
@@ -107,7 +110,7 @@ const keyDownListener = (dispatch: AppDispatch) => (e: KeyboardEvent): void => {
     const action = keyToAction[e.key]
     if (action !== undefined) {
       e.preventDefault()
-      dispatch(action)
+      dispatch(action(dispatch))
     }
   }
 }
@@ -140,9 +143,11 @@ const Table = styled.table`
   border-collapse: separate; border-spacing: 0;
 `
 
-const Row = styled.tr`
+const Row = styled.tr<{ isCurrentlyPlayed: boolean }>`
+  background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "transparent" };
+
   &:nth-of-type(4n-3) {
-    background-color: #f0f0f0;
+    background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "#f0f0f0" };
   }
 `
 

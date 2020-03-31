@@ -2,7 +2,7 @@ import * as React from "react"
 import styled from "styled-components"
 
 import { AppDispatch } from "./AppReducer"
-import { Label } from "./InputComponents"
+import { Label, Hint } from "./InputComponents"
 import { short12TetKeys } from "./Key"
 import { Tone, toneColor, notesIn12Edo, diffText } from "./Tone"
 import { grayscaleColor, selectionColor } from "./Util"
@@ -29,7 +29,7 @@ export function TuningPanel({ dispatch, numberOfSubdivisions, tones, pressedTone
         onChange={ e => dispatch({ type: "setNumberOfSubdivisions", numberOfSubdivisions: Number.parseInt(e.target.value) }) }
         value={numberOfSubdivisions}
       >
-        { [12,17,19,24,31,5,6,7,8,9,10,11,13,14,15,16,18,20,21,22,23].map(n =>
+        { [12,17,19,24,31,5,7,8,9,10,11,13,14,15,16,18,20,21,22,23].map(n =>
             <option key={n} value={n}>{n}-EDO</option>
         ) }
       </select>
@@ -50,12 +50,6 @@ export function TuningPanel({ dispatch, numberOfSubdivisions, tones, pressedTone
     </Table>
   </>
 }
-
-const Hint = styled.p`
-  margin: 0.25rem 0 0 0;
-  color: #666;
-  font-size: 12px;
-`
 
 const Table = styled.table`
   margin: 0.5rem 0 0 0;
