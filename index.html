@@ -7,8 +7,15 @@
     <style>
       @import url('https://fonts.googleapis.com/css?family=Lato:400,700&display=swap');
 
-      body, select { font-family: 'Lato', sans-serif; font-size: 16px; }
+      html {
+        font-family: 'Lato', sans-serif;
+        font-size: 14px;
+      }
+      @media (min-width: 768px) { html { font-size: 16px; } }
+      @media (min-width: 1366px) { html { font-size: 18px; } }
+
       body { margin: 0; padding: 0; }
+      input, select { font-size: 1em; }
     </style>
   </head>
   <body>
