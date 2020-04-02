@@ -19,9 +19,9 @@ export function App() {
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
 
-  return <>
+  return <Root>
     <Navigation dispatch={dispatch} openPanel={openPanel} />
-    <Container>
+    <Main>
       <Keyboard
         dispatch={dispatch}
         keys={keys}
@@ -47,10 +47,20 @@ export function App() {
               waveform={waveform} />
         : null
       }
-    </Container>
-  </>
+    </Main>
+  </Root>
 }
 
-const Container = styled.div`
-  margin: 0 1rem;
+const Root = styled.div`
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+`
+
+const Main = styled.main`
+  flex: auto;
+  padding: 1rem;
 `

@@ -8,5 +8,5 @@ export const Label = styled.span`
 export const Hint = styled.p`
   margin: 0.25rem 0 0 0;
   color: #666;
-  font-size: 12px;
+  font-size: 0.8rem;
 `

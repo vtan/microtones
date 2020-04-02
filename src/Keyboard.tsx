@@ -2,7 +2,6 @@ import * as React from "react"
 import styled from "styled-components"
 
 import { AppDispatch } from "./AppReducer"
-import { Label } from "./InputComponents"
 import { Key } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
 import { notesIn12Edo } from "./Tone"
@@ -89,25 +88,37 @@ export function Keyboard(props: Props) {
   )
 
   return <Container>
+    <OctaveContainer>
+      <OctaveLabel>Octave</OctaveLabel>
+      <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
+    </OctaveContainer>
     <Svg>
       { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
       { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
       { keys.map((key, index) => renderKeyLabels(key, index)) }
     </Svg>
-    <div>
-      <Label>Octave</Label>
-      <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
-    </div>
   </Container>
 }
 
 const Container = styled.div`
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+`
+
+const OctaveContainer = styled.div`
+  text-align: center;
+  & input { text-align: right; }
+`
+
+const OctaveLabel = styled.div`
+  font-size: 0.8rem;
 `
 
 const Svg = styled.svg`
   width: 100%;
   height: 120px;
+  margin-left: 1rem;
 `
 
 const KeyLabel = styled.text`

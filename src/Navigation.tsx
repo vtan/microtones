@@ -34,25 +34,38 @@ export function Navigation({ dispatch, openPanel }: Props) {
   </Container>
 }
 
-const Container = styled.div`
+const Container = styled.nav`
   display: flex;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #f3f3f3;
+  border-bottom: 1px solid #e0e0e0;
+
+  @media (min-width: 768px) {
+    position: -webkit-sticky;
+    position: sticky;
+    box-sizing: border-box;
+    width: 15rem;
+    height: 100vh;
+    top: 0;
+    left: 0;
+
+    flex-direction: column;
+    padding-top: 1rem;
+    border: unset;
+    border-right: 1px solid #e0e0e0;
+  }
 `
 
 const Link = styled.a<{ isActive: boolean }>`
   display: inline-block;
-  margin-left: 1rem;
-  padding: 1rem;
+
+  padding: 0.5rem;
+  @media (min-width: 768px) {
+    padding: 1rem;
+  }
 
   background-color: ${props => props.isActive ? selectionColor : "transparent" };
   cursor: pointer;
-  text-decoration: none;
   transition: background-color 0.15s;
 
-  &:last-child {
-    margin-right: 1rem;
-  }
   &:hover {
     background-color: ${props => props.isActive ? selectionColor : "#f3f3f3" };
   }
