@@ -1,3 +1,4 @@
+import * as _ from "lodash"
 import * as React from "react"
 import styled from "styled-components"
 
@@ -31,17 +32,41 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
     (sel: SequenceIndex) => () => dispatch({ type: "setSequencerSelection", selection: sel }),
     []
   )
-
   const onStepsChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) =>
-      dispatch({ type: "resizeSequenceSteps", numberOfSteps: parseInt(e.target.value)}),
+      dispatch({ type: "resizeSequenceSteps", numberOfSteps: parseInt(e.target.value) }),
     []
+  )
+  const tempo = React.useMemo(
+    () => 60 / (4 * sequence.secondsPerStep),
+    [sequence.secondsPerStep]
+  )
+  const [displayedTempo, setDisplayedTempo] = React.useState(tempo)
+  const dispatchTempoChange = React.useCallback(
+    _.throttle((bpm: number) => {
+      const secondsPerStep = 60 / bpm / 4
+      dispatch({ type: "setSequenceTempo", secondsPerStep })
+    }, 200),
+    []
+  )
+  const onTempoChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const bpm = parseInt(e.target.value)
+      dispatchTempoChange(bpm)
+      setDisplayedTempo(bpm)
+    },
+    [dispatchTempoChange]
   )
 
   return <>
     <div>
       <Label>Steps</Label>
       <input onChange={onStepsChange} type="number" min={4} max={256} value={sequence.steps.length} />
+    </div>
+    <div>
+      <Label>Tempo</Label>
+      <TempoText>{displayedTempo.toFixed(0)}</TempoText>
+      <input onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} />
     </div>
     <Toolbar>
       <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }>
@@ -144,6 +169,11 @@ const Button = styled.button`
   &:hover {
     background-color: #f3f3f3;
   }
+`
+
+const TempoText = styled.span`
+  display: inline-block;
+  width: 2.5rem;
 `
 
 const Separator = styled.div`

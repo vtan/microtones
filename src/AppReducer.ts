@@ -104,6 +104,7 @@ export type AppAction =
   | { type: "moveSequencerSelection", diff: SequenceIndex }
   | { type: "setSelectedStep", step: Step }
   | { type: "resizeSequenceSteps", numberOfSteps: number }
+  | { type: "setSequenceTempo", secondsPerStep: number }
   | { type: "toggleSequencerPlaying", dispatch: AppDispatch }
   | { type: "setSequencerPlaybackStepIndex", stepIndex: number }
 
@@ -210,6 +211,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         sequence: resizeSequenceSteps(action.numberOfSteps, state.sequence),
         sequencerPlayback: undefined
+      }
+
+    case "setSequenceTempo":
+      if (action.secondsPerStep > 0) {
+        if (state.sequencerPlayback !== undefined) {
+          stopSequencer(state)
+        }
+        const sequence = { ...state.sequence, secondsPerStep: action.secondsPerStep }
+        return { ...state, sequence, sequencerPlayback: undefined }
+      } else {
+        return state
       }
 
     case "toggleSequencerPlaying": {
