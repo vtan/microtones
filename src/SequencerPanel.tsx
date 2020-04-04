@@ -6,7 +6,7 @@ import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText } from "./Tone"
 import { selectionColor, playbackColor } from "./Util"
-import { Hint } from "./InputComponents"
+import { Hint, Label } from "./InputComponents"
 
 interface Props {
   dispatch: AppDispatch,
@@ -32,7 +32,17 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
     []
   )
 
+  const onStepsChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      dispatch({ type: "resizeSequenceSteps", numberOfSteps: parseInt(e.target.value)}),
+    []
+  )
+
   return <>
+    <div>
+      <Label>Steps</Label>
+      <input onChange={onStepsChange} type="number" min={4} max={256} value={sequence.steps.length} />
+    </div>
     <Toolbar>
       <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }>
         { playback === undefined ? "▶" : "◼" }
@@ -44,6 +54,7 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
     <Table>
       <thead>
         <tr>
+          <th key={-1} />
           { [ ...Array(sequence.numberOfTracks) ].map((_, i) =>
               <th key={i}>Track {i + 1}</th>
           ) }
@@ -54,6 +65,7 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
             const isStepSelected = selection !== undefined && selection.step === i
             const isCurrentlyPlayed = playback !== undefined && playback.currentStepIndex === i
             return <Row key={i} isCurrentlyPlayed={isCurrentlyPlayed}>
+              <StepNumberCell key={i}>{ i + 1 }</StepNumberCell>
               { stepsPerTrack.map((step, j) => {
                   const isSelected = isStepSelected && selection !== undefined && selection.track === j
                   const content = cellContent(step, pitches)
@@ -149,6 +161,12 @@ const Row = styled.tr<{ isCurrentlyPlayed: boolean }>`
   &:nth-of-type(4n-3) {
     background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "#f0f0f0" };
   }
+`
+
+const StepNumberCell = styled.td`
+  width: 2rem;
+  padding-right: 1rem;
+  text-align: right;
 `
 
 const Cell = styled.td<{ isSelected: boolean }>`

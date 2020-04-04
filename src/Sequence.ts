@@ -30,8 +30,16 @@ export interface StepEvent {
 
 export const emptySequence: Sequence = {
   numberOfTracks: 4,
-  steps: [ ...Array(16) ].map(_ => [ ...Array(4) ].map(_ => ({ type: "empty" }))),
+  steps: emptySteps(16, 4),
   secondsPerStep: 0.2
+}
+
+function emptySteps(numberOfSteps: number, numberOfTracks: number): ReadonlyArray<ReadonlyArray<Step>> {
+  return [ ...Array(numberOfSteps) ].map(_ => emptyStep(numberOfTracks))
+}
+
+function emptyStep(numberOfTracks: number): ReadonlyArray<Step> {
+  return [ ...Array(numberOfTracks) ].map(_ => ({ type: "empty" }))
 }
 
 export function setInSequence(index: SequenceIndex, newStep: Step, sequence: Sequence): Sequence {
@@ -41,6 +49,23 @@ export function setInSequence(index: SequenceIndex, newStep: Step, sequence: Seq
     sequence.steps
   )
   return { ...sequence, steps }
+}
+
+export function resizeSequenceSteps(newSteps: number, sequence: Sequence): Sequence {
+  if (newSteps < 1 || newSteps > 256) {
+    return sequence
+  }
+
+  if (newSteps < sequence.steps.length) {
+    const steps = sequence.steps.slice(0, newSteps)
+    return { ...sequence, steps }
+  } else if (newSteps > sequence.steps.length) {
+    const diff = newSteps - sequence.steps.length
+    const steps = [ ...sequence.steps, ...emptySteps(diff, sequence.numberOfTracks) ]
+    return { ...sequence, steps }
+  } else {
+    return sequence
+  }
 }
 
 export function sequenceToTimes(sequence: Sequence): ReadonlyArray<StepTime> {

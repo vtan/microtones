@@ -3,7 +3,7 @@ import { Part, PolySynth, Synth, Transport } from "tone"
 import { Key, keyboardFromPitches } from "./Key"
 import { tonesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Tone } from "./Tone"
-import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes } from "./Sequence"
+import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
@@ -103,6 +103,7 @@ export type AppAction =
   | { type: "setSequencerSelection", selection?: SequenceIndex }
   | { type: "moveSequencerSelection", diff: SequenceIndex }
   | { type: "setSelectedStep", step: Step }
+  | { type: "resizeSequenceSteps", numberOfSteps: number }
   | { type: "toggleSequencerPlaying", dispatch: AppDispatch }
   | { type: "setSequencerPlaybackStepIndex", stepIndex: number }
 
@@ -200,6 +201,16 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "setSelectedStep":
       return changeSelectedSequencerStep(state, action.step)
+
+    case "resizeSequenceSteps":
+      if (state.sequencerPlayback !== undefined) {
+        stopSequencer(state)
+      }
+      return {
+        ...state,
+        sequence: resizeSequenceSteps(action.numberOfSteps, state.sequence),
+        sequencerPlayback: undefined
+      }
 
     case "toggleSequencerPlaying": {
       if (state.sequencerPlayback === undefined) {
