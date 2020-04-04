@@ -24,7 +24,6 @@ export interface AppState {
   keys: ReadonlyArray<Key>,
   keyboardOffset: number,
   pressedKeyIndices: ReadonlyArray<number>,
-  pressedToneMultipliers: ReadonlyArray<number>,
   sequence: Sequence,
   sequencerSelection?: SequenceIndex,
   sequencerPlayback?: SequencerPlaybackState
@@ -55,7 +54,6 @@ function initializeState(): AppState {
     keys,
     keyboardOffset,
     pressedKeyIndices: [],
-    pressedToneMultipliers: [],
     sequence: emptySequence
   }
 }
@@ -158,13 +156,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         state.synth.triggerAttack(key.pitch.frequency)
 
         const pressedKeyIndices = [ ...state.pressedKeyIndices, action.keyIndex ]
-        const pressedToneMultipliers = pressedKeyIndices.map(i => state.keys[i].pitch.tone.rootMultiplier)
         const updateSequence =
           state.openPanel === "sequencer" && state.sequencerSelection !== undefined
             ? (st: AppState) =>
                 changeSelectedSequencerStep(st, { type: "pitch", pitchIndex: action.keyIndex + state.keyboardOffset })
             : (st: AppState) => st
-        return updateSequence({ ...state, pressedKeyIndices, pressedToneMultipliers })
+        return updateSequence({ ...state, pressedKeyIndices })
       }
     }
 
@@ -176,8 +173,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         state.synth.triggerRelease(key.pitch.frequency)
 
         const pressedKeyIndices = state.pressedKeyIndices.filter(i => i !== action.keyIndex)
-        const pressedToneMultipliers = pressedKeyIndices.map(i => state.keys[i].pitch.tone.rootMultiplier)
-        return { ...state, pressedKeyIndices, pressedToneMultipliers }
+        return { ...state, pressedKeyIndices }
       }
     }
 

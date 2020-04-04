@@ -24,7 +24,8 @@ export interface StepTime {
 
 export interface StepEvent {
   duration: number,
-  frequency: number
+  frequency: number,
+  pitchIndex: number
 }
 
 export const emptySequence: Sequence = {
@@ -77,7 +78,8 @@ function trackToEvents(
       case "pitch":
         event = {
           duration: sequence.secondsPerStep,
-          frequency: pitches[step.pitchIndex].frequency
+          frequency: pitches[step.pitchIndex].frequency,
+          pitchIndex: step.pitchIndex
         }
         currentEventForHold = event
         break

@@ -3,7 +3,7 @@ import styled from "styled-components"
 
 import { AppDispatch } from "./AppReducer"
 import { Label, Hint } from "./InputComponents"
-import { short12TetKeys } from "./Key"
+import { short12TetKeys, Key } from "./Key"
 import { Tone, toneColor, notesIn12Edo, diffText } from "./Tone"
 import { grayscaleColor, selectionColor } from "./Util"
 
@@ -11,10 +11,16 @@ export interface Props {
   dispatch: AppDispatch,
   numberOfSubdivisions: number,
   tones: ReadonlyArray<Tone>,
-  pressedToneMultipliers: ReadonlyArray<number>
+  keys: ReadonlyArray<Key>,
+  pressedKeyIndices: ReadonlyArray<number>
 }
 
-export function TuningPanel({ dispatch, numberOfSubdivisions, tones, pressedToneMultipliers }: Props) {
+export function TuningPanel({ dispatch, numberOfSubdivisions, tones, keys, pressedKeyIndices }: Props) {
+  const pressedToneMultipliers = React.useMemo(
+    () => pressedKeyIndices.map(i => keys[i].pitch.tone.rootMultiplier),
+    [pressedKeyIndices, keys]
+  )
+
   const toneColors = React.useMemo(
     () => tones.map(tone =>
       grayscaleColor(toneColor(tone, short12TetKeys.indexOf(tone.nearest12TetTone) < 0))

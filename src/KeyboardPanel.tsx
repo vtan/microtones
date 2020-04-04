@@ -1,7 +1,7 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch } from "./AppReducer"
+import { AppDispatch, SequencerPlaybackState } from "./AppReducer"
 import { Key } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
 import { notesIn12Edo } from "./Tone"
@@ -13,10 +13,11 @@ export interface Props {
   keys: ReadonlyArray<Key>,
   numberOfSubdivisons: number,
   keyboardOffset: number,
-  pressedKeyIndices: ReadonlyArray<number>
+  pressedKeyIndices: ReadonlyArray<number>,
+  sequencerPlayback?: SequencerPlaybackState
 }
 
-export function Keyboard(props: Props) {
+export function KeyboardPanel(props: Props) {
   const { dispatch } = props
 
   const onTrigger = React.useCallback(
@@ -73,7 +74,18 @@ export function Keyboard(props: Props) {
     []
   )
 
-  const { keys, pressedKeyIndices, keyboardOffset, numberOfSubdivisons } = props
+  const { keys, pressedKeyIndices, keyboardOffset, numberOfSubdivisons, sequencerPlayback } = props
+
+  const allPressedKeyIndices = React.useMemo(
+    () => {
+      const playbackKeys = sequencerPlayback === undefined
+        ? []
+        : sequencerPlayback.stepEventsRef[0][sequencerPlayback.currentStepIndex]
+            .map(stepEvent => stepEvent.pitchIndex - keyboardOffset)
+      return [ ...pressedKeyIndices, ...playbackKeys ]
+    },
+    [pressedKeyIndices, keyboardOffset, sequencerPlayback]
+  )
 
   const octave = React.useMemo(
     () => keyboardOffset / numberOfSubdivisons,
@@ -93,8 +105,8 @@ export function Keyboard(props: Props) {
       <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
     </OctaveContainer>
     <Svg>
-      { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
-      { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
+      { keys.map((key, index) => key.isShort ? null : renderKey(key, index, allPressedKeyIndices)) }
+      { keys.map((key, index) => key.isShort ? renderKey(key, index, allPressedKeyIndices) : null) }
       { keys.map((key, index) => renderKeyLabels(key, index)) }
     </Svg>
   </Container>
