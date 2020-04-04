@@ -32,7 +32,8 @@ export interface AppState {
 export interface SequencerPlaybackState {
   synth: Tone.PolySynth,
   stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>],
-  currentStepIndex: number
+  currentStepIndex: number,
+  dispatch: AppDispatch
 }
 
 export const initialAppState: AppState = initializeState()
@@ -203,23 +204,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "setSelectedStep":
       return changeSelectedSequencerStep(state, action.step)
 
-    case "resizeSequenceSteps":
-      if (state.sequencerPlayback !== undefined) {
-        stopSequencer(state)
-      }
-      return {
-        ...state,
-        sequence: resizeSequenceSteps(action.numberOfSteps, state.sequence),
-        sequencerPlayback: undefined
-      }
+    case "resizeSequenceSteps": {
+      const sequence = resizeSequenceSteps(action.numberOfSteps, state.sequence)
+      const newState = { ...state, sequence }
+      const sequencerPlayback = restartSequencer(newState)
+      return { ...newState, sequencerPlayback }
+    }
 
     case "setSequenceTempo":
       if (action.secondsPerStep > 0) {
-        if (state.sequencerPlayback !== undefined) {
-          stopSequencer(state)
-        }
         const sequence = { ...state.sequence, secondsPerStep: action.secondsPerStep }
-        return { ...state, sequence, sequencerPlayback: undefined }
+        const newState = { ...state, sequence }
+        const sequencerPlayback = restartSequencer(newState)
+        return { ...newState, sequencerPlayback}
       } else {
         return state
       }
@@ -257,9 +254,11 @@ function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
 
 }
 
-function startSequencer(state: AppState, dispatch: AppDispatch): SequencerPlaybackState {
+function startSequencer(state: AppState, dispatch: AppDispatch, fromStep: number = 0): SequencerPlaybackState {
   const synth = createSynth(state.waveform)
 
+  const currentStepIndex =
+    fromStep >= 0 && fromStep < state.sequence.steps.length ? fromStep : 0
   const stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>] =
     [sequenceToEvents(state.pitches, state.sequence)]
   const stepTimes = [ ...sequenceToTimes(state.sequence) ]
@@ -273,13 +272,24 @@ function startSequencer(state: AppState, dispatch: AppDispatch): SequencerPlayba
     stepTimes
   )
   const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
+  const startOffset = state.sequence.secondsPerStep * currentStepIndex
   Tone.Transport.cancel()
   Tone.Transport.start()
-  Tone.Transport.setLoopPoints(0, loopLength)
-  Tone.Transport.loop = true
-  part.start(0)
+  part.loopStart = 0
+  part.loopEnd = loopLength
+  part.loop = true
+  part.start(0, startOffset)
 
-  return { synth, stepEventsRef, currentStepIndex: 0 }
+  return { synth, stepEventsRef, dispatch, currentStepIndex }
+}
+
+function restartSequencer(state: AppState): SequencerPlaybackState | undefined {
+  if (state.sequencerPlayback === undefined) {
+    return undefined
+  } else {
+    stopSequencer(state)
+    return startSequencer(state, state.sequencerPlayback.dispatch, state.sequencerPlayback.currentStepIndex)
+  }
 }
 
 function stopSequencer(state: AppState): void {

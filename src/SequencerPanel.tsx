@@ -46,7 +46,7 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
     _.throttle((bpm: number) => {
       const secondsPerStep = 60 / bpm / 4
       dispatch({ type: "setSequenceTempo", secondsPerStep })
-    }, 200),
+    }, 500, { leading: false }),
     []
   )
   const onTempoChange = React.useCallback(
