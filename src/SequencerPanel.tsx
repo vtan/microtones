@@ -5,7 +5,7 @@ import styled from "styled-components"
 import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
-import { notesIn12Edo, diffText } from "./Tone"
+import { notesIn12Edo, diffText } from "./Note"
 import { selectionColor, playbackColor } from "./Util"
 import { Hint, Label } from "./InputComponents"
 
@@ -114,8 +114,8 @@ function cellContent(step: Step, pitches: ReadonlyArray<Pitch>) {
       return "_"
     case "pitch":
       const pitch = pitches[step.pitchIndex]
-      const note = notesIn12Edo[pitch.tone.nearest12TetTone]
-      const cents = diffText(pitch.tone)
+      const note = notesIn12Edo[pitch.note.nearest12EdoNote]
+      const cents = diffText(pitch.note)
       return <>{note}<sub>{pitch.octave}</sub> {cents}</>
     case "hold":
       return "|"

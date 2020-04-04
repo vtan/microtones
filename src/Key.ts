@@ -1,5 +1,5 @@
 import { Pitch } from "./Pitch"
-import { toneColor } from "./Tone"
+import { noteColor } from "./Note"
 
 export interface Key {
   x: number,
@@ -10,7 +10,7 @@ export interface Key {
   pitch: Pitch
 }
 
-export const short12TetKeys = [1, 3, 6, 8, 10]
+export const short12EdoKeys = [1, 3, 6, 8, 10]
 const tallKeyWidth = 1
 const shortKeyWidth = 0.5
 
@@ -28,9 +28,9 @@ export function keyboardFromPitches(pitches: ReadonlyArray<Pitch>): ReadonlyArra
   let shortKeysSinceLastTallKey = 0
   let x = 0
   pitches.forEach((pitch, index) => {
-    const tone = pitch.tone
-    const isShort = short12TetKeys.indexOf(tone.nearest12TetTone) >= 0
-    const color = toneColor(tone, !isShort)
+    const note = pitch.note
+    const isShort = short12EdoKeys.indexOf(note.nearest12EdoNote) >= 0
+    const color = noteColor(note, !isShort)
 
     let xActual = x
     let width = isShort ? shortKeyWidth : tallKeyWidth

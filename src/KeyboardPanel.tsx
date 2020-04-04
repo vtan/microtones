@@ -4,7 +4,7 @@ import styled from "styled-components"
 import { AppDispatch, SequencerPlaybackState } from "./AppReducer"
 import { Key } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
-import { notesIn12Edo } from "./Tone"
+import { notesIn12Edo } from "./Note"
 
 const keyWidthScale = 36
 
@@ -59,7 +59,7 @@ export function KeyboardPanel(props: Props) {
           >
             {key.keyboardChar}
           </KeyLabel>
-      const nearest12ToneLabel = key.isShort || key.pitch.tone.nearestTo12TetTone === undefined
+      const nearest12NoteLabel = key.isShort || key.pitch.note.nearestTo12EdoNote === undefined
         ? null
         : <KeyLabel
             x={keyWidthScale * (key.x + key.width / 2)}
@@ -67,9 +67,9 @@ export function KeyboardPanel(props: Props) {
             fill="black"
             fillOpacity={0.3}
           >
-            {notesIn12Edo[key.pitch.tone.nearestTo12TetTone]}
+            {notesIn12Edo[key.pitch.note.nearestTo12EdoNote]}
           </KeyLabel>
-      return <React.Fragment key={"l" + index}>{keyboardLabel}{nearest12ToneLabel}</React.Fragment>
+      return <React.Fragment key={"l" + index}>{keyboardLabel}{nearest12NoteLabel}</React.Fragment>
     },
     []
   )

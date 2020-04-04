@@ -13,7 +13,7 @@ export function App() {
   const [state, dispatch] = React.useReducer(appReducer, initialAppState)
   const
     { openPanel, numberOfSubdivisions, waveform
-    , tones, pitches, keys, keyboardOffset, pressedKeyIndices
+    , notes, pitches, keys, keyboardOffset, pressedKeyIndices
     , sequence, sequencerSelection, sequencerPlayback
     } = state
 
@@ -41,7 +41,7 @@ export function App() {
           ? <TuningPanel
               dispatch={dispatch}
               numberOfSubdivisions={numberOfSubdivisions}
-              tones={tones}
+              notes={notes}
               keys={keys}
               pressedKeyIndices={pressedKeyIndices} />
         : openPanel === "synth"

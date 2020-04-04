@@ -1,8 +1,8 @@
-import { Part, PolySynth, Synth, Transport } from "tone"
+import * as Tone from "tone"
 
 import { Key, keyboardFromPitches } from "./Key"
-import { tonesToPitches, Pitch } from "./Pitch"
-import { equalOctaveSubdivisions, Tone } from "./Tone"
+import { notesToPitches, Pitch } from "./Pitch"
+import { equalOctaveSubdivisions, Note } from "./Note"
 import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
@@ -16,10 +16,10 @@ const maxOctave: number = 8
 
 export interface AppState {
   openPanel: Panel,
-  synth: PolySynth,
+  synth: Tone.PolySynth,
   waveform: Waveform,
   numberOfSubdivisions: number,
-  tones: ReadonlyArray<Tone>,
+  notes: ReadonlyArray<Note>,
   pitches: ReadonlyArray<Pitch>,
   keys: ReadonlyArray<Key>,
   keyboardOffset: number,
@@ -30,7 +30,7 @@ export interface AppState {
 }
 
 export interface SequencerPlaybackState {
-  synth: PolySynth,
+  synth: Tone.PolySynth,
   stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>],
   currentStepIndex: number
 }
@@ -42,14 +42,14 @@ function initializeState(): AppState {
   const keyboardOffset = 4 * numberOfSubdivisions
   const waveform = "triangle"
   const synth = createSynth(waveform)
-  const { tones, pitches, keys } = tonesPitchesKeys(numberOfSubdivisions, keyboardOffset)
+  const { notes, pitches, keys } = notesPitchesKeys(numberOfSubdivisions, keyboardOffset)
 
   return {
     openPanel: "tuning",
     synth,
     waveform,
     numberOfSubdivisions,
-    tones,
+    notes,
     pitches,
     keys,
     keyboardOffset,
@@ -58,8 +58,8 @@ function initializeState(): AppState {
   }
 }
 
-function createSynth(waveform: Waveform): PolySynth {
-  return new PolySynth(Synth, {
+function createSynth(waveform: Waveform): Tone.PolySynth {
+  return new Tone.PolySynth(Tone.Synth, {
     volume: -6,
     oscillator: { type: waveform },
     envelope: {
@@ -83,14 +83,14 @@ function keyboardOctavesForTuning(numberOfSubdivisions: number): number {
   }
 }
 
-function tonesPitchesKeys(numberOfSubdivisions: number, keyboardOffset: number) {
-  const tones = equalOctaveSubdivisions(numberOfSubdivisions)
+function notesPitchesKeys(numberOfSubdivisions: number, keyboardOffset: number) {
+  const notes = equalOctaveSubdivisions(numberOfSubdivisions)
   // Hacky: + 2 below so the highest C is also included
-  const pitches = tonesToPitches(16.0352, minOctave, maxOctave - minOctave + 2, tones)
+  const pitches = notesToPitches(16.0352, minOctave, maxOctave - minOctave + 2, notes)
   const octaves = keyboardOctavesForTuning(numberOfSubdivisions)
   const keyPitches = pitches.slice(keyboardOffset, keyboardOffset + octaves * numberOfSubdivisions + 1)
   const keys = keyboardFromPitches(keyPitches)
-  return { tones, pitches, keys }
+  return { notes, pitches, keys }
 }
 
 export type AppAction =
@@ -121,7 +121,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         numberOfSubdivisions: action.numberOfSubdivisions,
-        ...tonesPitchesKeys(action.numberOfSubdivisions, keyboardOffset),
+        ...notesPitchesKeys(action.numberOfSubdivisions, keyboardOffset),
         keyboardOffset,
         sequence: emptySequence,
         sequencerPlayback: undefined
@@ -263,7 +263,7 @@ function startSequencer(state: AppState, dispatch: AppDispatch): SequencerPlayba
   const stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>] =
     [sequenceToEvents(state.pitches, state.sequence)]
   const stepTimes = [ ...sequenceToTimes(state.sequence) ]
-  const part = new Part(
+  const part = new Tone.Part(
     (time, { stepIndex }) => {
       for (const event of stepEventsRef[0][stepIndex]) {
         synth.triggerAttackRelease(event.frequency, event.duration, time)
@@ -273,18 +273,18 @@ function startSequencer(state: AppState, dispatch: AppDispatch): SequencerPlayba
     stepTimes
   )
   const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
-  Transport.cancel()
-  Transport.start()
-  Transport.setLoopPoints(0, loopLength)
-  Transport.loop = true
+  Tone.Transport.cancel()
+  Tone.Transport.start()
+  Tone.Transport.setLoopPoints(0, loopLength)
+  Tone.Transport.loop = true
   part.start(0)
 
   return { synth, stepEventsRef, currentStepIndex: 0 }
 }
 
 function stopSequencer(state: AppState): void {
-  Transport.stop()
-  Transport.cancel()
+  Tone.Transport.stop()
+  Tone.Transport.cancel()
   if (state.sequencerPlayback !== undefined) {
     const synth = state.sequencerPlayback.synth
     synth.releaseAll()

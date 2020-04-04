@@ -1,25 +1,25 @@
-import { Tone } from "./Tone"
+import { Note } from "./Note"
 
 export interface Pitch {
   octave: number,
   frequency: number,
-  tone: Tone
+  note: Note
 }
 
-export function tonesToPitches(
+export function notesToPitches(
   lowestFrequency: number,
   lowestOctave: number,
   octaves: number,
-  tones: ReadonlyArray<Tone>
+  notes: ReadonlyArray<Note>
 ): ReadonlyArray<Pitch> {
   const result: Array<Pitch> = []
   for (let octave = 0; octave < octaves; ++octave) {
     const rootFrequency = lowestFrequency * Math.pow(2, octave - 1)
-    result.push(...tones.map(tone =>
+    result.push(...notes.map(note =>
       ({
         octave:  lowestOctave + octave,
-        frequency: rootFrequency * tone.rootMultiplier,
-        tone
+        frequency: rootFrequency * note.rootMultiplier,
+        note
       })
     ))
   }
