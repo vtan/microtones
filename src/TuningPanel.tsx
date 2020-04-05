@@ -4,18 +4,19 @@ import styled from "styled-components"
 import { AppDispatch } from "./AppReducer"
 import { Label, Hint } from "./InputComponents"
 import { short12EdoKeys, Key } from "./Key"
-import { Note, noteColor, notesIn12Edo, diffText } from "./Note"
+import { Note, noteColor, notesIn12Edo, diffText, Accidental } from "./Note"
 import { grayscaleColor, selectionColor } from "./Util"
 
 export interface Props {
   dispatch: AppDispatch,
   numberOfSubdivisions: number,
+  displayedAccidental: Accidental,
   notes: ReadonlyArray<Note>,
   keys: ReadonlyArray<Key>,
   pressedKeyIndices: ReadonlyArray<number>
 }
 
-export function TuningPanel({ dispatch, numberOfSubdivisions, notes, keys, pressedKeyIndices }: Props) {
+export function TuningPanel({ dispatch, numberOfSubdivisions, displayedAccidental, notes, keys, pressedKeyIndices }: Props) {
   const pressedNoteMultipliers = React.useMemo(
     () => pressedKeyIndices.map(i => keys[i].pitch.note.rootMultiplier),
     [pressedKeyIndices, keys]
@@ -41,10 +42,20 @@ export function TuningPanel({ dispatch, numberOfSubdivisions, notes, keys, press
       </select>
       <Hint>Changing the tuning clears the sequencer</Hint>
     </div>
+    <div>
+      <Label>Accidental</Label>
+      <select
+        onChange={ e => dispatch({ type: "setDisplayedAccidental", displayedAccidental: e.target.value as Accidental }) }
+        value={displayedAccidental}
+      >
+        <option value="sharp">♯</option>
+        <option value="flat">♭</option>
+      </select>
+    </div>
     <Table>
       <tbody>
         { notes.map((note, index) => {
-            const nearest12EdoNote = notesIn12Edo[note.nearest12EdoNote]
+            const nearest12EdoNote = notesIn12Edo[displayedAccidental][note.nearest12EdoNote]
             const cents = diffText(note)
             return <tr key={index} style={{ backgroundColor: pressedNoteMultipliers.indexOf(note.rootMultiplier) >= 0 ? selectionColor : "transparent" }}>
               <td style={{ backgroundColor: noteColors[index], width: "1lh" }}></td>

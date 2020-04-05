@@ -67,7 +67,7 @@ export function KeyboardPanel(props: Props) {
             fill="black"
             fillOpacity={0.3}
           >
-            {notesIn12Edo[key.pitch.note.nearestTo12EdoNote]}
+            {notesIn12Edo.sharp[key.pitch.note.nearestTo12EdoNote]}
           </KeyLabel>
       return <React.Fragment key={"l" + index}>{keyboardLabel}{nearest12NoteLabel}</React.Fragment>
     },

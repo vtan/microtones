@@ -12,7 +12,7 @@ import { TuningPanel } from "./TuningPanel"
 export function App() {
   const [state, dispatch] = React.useReducer(appReducer, initialAppState)
   const
-    { openPanel, numberOfSubdivisions, waveform
+    { openPanel, numberOfSubdivisions, displayedAccidental, waveform
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
     , sequence, sequencerSelection, sequencerPlayback
     } = state
@@ -34,6 +34,7 @@ export function App() {
           ? <SequencerPanel
               dispatch={dispatch}
               sequence={sequence}
+              displayedAccidental={displayedAccidental}
               pitches={pitches}
               selection={sequencerSelection}
               playback={sequencerPlayback} />
@@ -41,6 +42,7 @@ export function App() {
           ? <TuningPanel
               dispatch={dispatch}
               numberOfSubdivisions={numberOfSubdivisions}
+              displayedAccidental={displayedAccidental}
               notes={notes}
               keys={keys}
               pressedKeyIndices={pressedKeyIndices} />

@@ -6,6 +6,8 @@ export interface Note {
   nearestTo12EdoNote?: number
 }
 
+export type Accidental = "flat" | "sharp"
+
 function noteFromSubdivision(subdivision: number): Note {
   const rootMultiplier = Math.pow(2, subdivision)
   const cents = 1200 * subdivision
@@ -62,5 +64,7 @@ export function diffText({ diffFromNearest12EdoNote }: Note): string {
   }
 }
 
-export const notesIn12Edo: ReadonlyArray<string> =
-  ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"]
+export const notesIn12Edo: Record<Accidental, ReadonlyArray<string>> = {
+  sharp: ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"],
+  flat: ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"]
+}

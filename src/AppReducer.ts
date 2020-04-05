@@ -2,7 +2,7 @@ import * as Tone from "tone"
 
 import { Key, keyboardFromPitches } from "./Key"
 import { notesToPitches, Pitch } from "./Pitch"
-import { equalOctaveSubdivisions, Note } from "./Note"
+import { equalOctaveSubdivisions, Note, Accidental } from "./Note"
 import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
@@ -19,6 +19,7 @@ export interface AppState {
   synth: Tone.PolySynth,
   waveform: Waveform,
   numberOfSubdivisions: number,
+  displayedAccidental: Accidental,
   notes: ReadonlyArray<Note>,
   pitches: ReadonlyArray<Pitch>,
   keys: ReadonlyArray<Key>,
@@ -50,6 +51,7 @@ function initializeState(): AppState {
     synth,
     waveform,
     numberOfSubdivisions,
+    displayedAccidental: "sharp",
     notes,
     pitches,
     keys,
@@ -97,6 +99,7 @@ function notesPitchesKeys(numberOfSubdivisions: number, keyboardOffset: number) 
 export type AppAction =
   { type: "openPanel", panel: Panel }
   | { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
+  | { type: "setDisplayedAccidental", displayedAccidental: Accidental }
   | { type: "setKeyboardOffset", keyboardOffset: number }
   | { type: "setWaveform", waveform: Waveform }
   | { type: "triggerNoteOn", keyIndex: number }
@@ -128,6 +131,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         sequencerPlayback: undefined
       }
     }
+
+    case "setDisplayedAccidental":
+      return { ...state, displayedAccidental: action.displayedAccidental }
 
     case "setKeyboardOffset": {
       // TODO duplication

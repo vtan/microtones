@@ -5,19 +5,20 @@ import styled from "styled-components"
 import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
-import { notesIn12Edo, diffText } from "./Note"
+import { notesIn12Edo, diffText, Accidental } from "./Note"
 import { selectionColor, playbackColor } from "./Util"
 import { Hint, Label } from "./InputComponents"
 
 interface Props {
   dispatch: AppDispatch,
   sequence: Sequence,
+  displayedAccidental: Accidental,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
   playback?: SequencerPlaybackState
 }
 
-export function SequencerPanel({ dispatch, sequence, pitches, selection, playback } : Props) {
+export function SequencerPanel({ dispatch, sequence, displayedAccidental, pitches, selection, playback }: Props) {
   React.useEffect(
     () => {
       const listener = keyDownListener(dispatch)
@@ -93,7 +94,7 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
               <StepNumberCell key={i}>{ i + 1 }</StepNumberCell>
               { stepsPerTrack.map((step, j) => {
                   const isSelected = isStepSelected && selection !== undefined && selection.track === j
-                  const content = cellContent(step, pitches)
+                  const content = cellContent(step, pitches, displayedAccidental)
                   return <Cell
                     key={j}
                     isSelected={isSelected}
@@ -108,13 +109,13 @@ export function SequencerPanel({ dispatch, sequence, pitches, selection, playbac
   </>
 }
 
-function cellContent(step: Step, pitches: ReadonlyArray<Pitch>) {
+function cellContent(step: Step, pitches: ReadonlyArray<Pitch>, displayedAccidental: Accidental) {
   switch (step.type) {
     case "empty":
       return "_"
     case "pitch":
       const pitch = pitches[step.pitchIndex]
-      const note = notesIn12Edo[pitch.note.nearest12EdoNote]
+      const note = notesIn12Edo[displayedAccidental][pitch.note.nearest12EdoNote]
       const cents = diffText(pitch.note)
       return <>{note}<sub>{pitch.octave}</sub> {cents}</>
     case "hold":
