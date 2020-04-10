@@ -1,15 +1,28 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "module": "commonjs",
+    // Project options
     "target": "es2015",
+    "module": "commonjs",
     "lib": [ "ES2019", "DOM" ],
-    "strict": true,
-    "noUnusedLocals": true,
-    "removeComments": true,
-    "preserveConstEnums": true,
     "jsx": "react",
-    "sourceMap": true
+    "sourceMap": true,
+    "removeComments": true,
+
+    // Module resolution
+    "baseUrl": ".",
+
+    // Strict checks
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+
+    // Linter checks
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
     "src/**/*"
