@@ -14,7 +14,7 @@ export function App() {
   const
     { openPanel, numberOfSubdivisions, displayedAccidental, waveform
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
-    , sequence, sequencerSelection, sequencerPlayback
+    , sequences, selectedSequenceIndex, sequencerSelection, sequencerPlayback
     } = state
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
@@ -33,7 +33,8 @@ export function App() {
       { openPanel === "sequencer"
           ? <SequencerPanel
               dispatch={dispatch}
-              sequence={sequence}
+              sequences={sequences}
+              selectedSequenceIndex={selectedSequenceIndex}
               displayedAccidental={displayedAccidental}
               pitches={pitches}
               selection={sequencerSelection}

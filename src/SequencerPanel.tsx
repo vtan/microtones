@@ -2,7 +2,7 @@ import * as _ from "lodash"
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
+import { AppDispatch, AppAction, SequencerPlaybackState, selectedSequence } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText, Accidental } from "./Note"
@@ -11,14 +11,17 @@ import { Hint, Label } from "./InputComponents"
 
 interface Props {
   dispatch: AppDispatch,
-  sequence: Sequence,
+  sequences: ReadonlyArray<Sequence>,
+  selectedSequenceIndex: number,
   displayedAccidental: Accidental,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
   playback?: SequencerPlaybackState
 }
 
-export function SequencerPanel({ dispatch, sequence, displayedAccidental, pitches, selection, playback }: Props) {
+export function SequencerPanel(
+  { dispatch, sequences, selectedSequenceIndex, displayedAccidental, pitches, selection, playback }: Props
+) {
   React.useEffect(
     () => {
       const listener = keyDownListener(dispatch)
@@ -38,6 +41,12 @@ export function SequencerPanel({ dispatch, sequence, displayedAccidental, pitche
       dispatch({ type: "resizeSequenceSteps", numberOfSteps: parseInt(e.target.value) }),
     []
   )
+
+  const sequence = React.useMemo(
+    () => selectedSequence({ sequences, selectedSequenceIndex }),
+    [sequences, selectedSequenceIndex]
+  )
+
   const tempo = React.useMemo(
     () => 60 / (4 * sequence.secondsPerStep),
     [sequence.secondsPerStep]

@@ -4,6 +4,7 @@ import { Key, keyboardFromPitches } from "./Key"
 import { notesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Note, Accidental } from "./Note"
 import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
+import { updateAt } from "./Util"
 
 export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
 
@@ -25,7 +26,8 @@ export interface AppState {
   keys: ReadonlyArray<Key>,
   keyboardOffset: number,
   pressedKeyIndices: ReadonlyArray<number>,
-  sequence: Sequence,
+  sequences: ReadonlyArray<Sequence>,
+  selectedSequenceIndex: number,
   sequencerSelection?: SequenceIndex,
   sequencerPlayback?: SequencerPlaybackState
 }
@@ -57,7 +59,20 @@ function initializeState(): AppState {
     keys,
     keyboardOffset,
     pressedKeyIndices: [],
-    sequence: emptySequence
+    sequences: [emptySequence],
+    selectedSequenceIndex: 0
+  }
+}
+
+export function selectedSequence(
+  { sequences, selectedSequenceIndex }: Pick<AppState, "sequences" | "selectedSequenceIndex">
+): Sequence {
+  const seq = sequences[selectedSequenceIndex]
+  if (seq === undefined) {
+    const msg = `Invalid selectedSequenceIndex: ${selectedSequenceIndex}; has ${sequences.length} sequences`
+    throw new Error(msg)
+  } else {
+    return seq
   }
 }
 
@@ -127,7 +142,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         numberOfSubdivisions: action.numberOfSubdivisions,
         ...notesPitchesKeys(action.numberOfSubdivisions, keyboardOffset),
         keyboardOffset,
-        sequence: emptySequence,
+        sequences: [emptySequence],
+        selectedSequenceIndex: 0,
         sequencerPlayback: undefined
       }
     }
@@ -197,9 +213,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           step: state.sequencerSelection.step + action.diff.step,
           track: state.sequencerSelection.track + action.diff.track
         }
+        const sequence = selectedSequence(state)
         if (
-          sel.step >= 0 && sel.step < state.sequence.steps.length &&
-          sel.track >= 0 && sel.track < state.sequence.numberOfTracks
+          sel.step >= 0 && sel.step < sequence.steps.length &&
+          sel.track >= 0 && sel.track < sequence.numberOfTracks
         ) {
           return { ...state, sequencerSelection: sel }
         } else {
@@ -211,16 +228,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return changeSelectedSequencerStep(state, action.step)
 
     case "resizeSequenceSteps": {
-      const sequence = resizeSequenceSteps(action.numberOfSteps, state.sequence)
-      const newState = { ...state, sequence }
+      const sequences = updateAt(
+        state.selectedSequenceIndex,
+        seq => resizeSequenceSteps(action.numberOfSteps, seq),
+        state.sequences
+      )
+      const newState = { ...state, sequences }
       const sequencerPlayback = restartSequencer(newState)
       return { ...newState, sequencerPlayback }
     }
 
     case "setSequenceTempo":
       if (action.secondsPerStep > 0) {
-        const sequence = { ...state.sequence, secondsPerStep: action.secondsPerStep }
-        const newState = { ...state, sequence }
+        const sequences = updateAt(
+          state.selectedSequenceIndex,
+          seq => ({ ...seq, secondsPerStep: action.secondsPerStep }),
+          state.sequences
+        )
+        const newState = { ...state, sequences }
         const sequencerPlayback = restartSequencer(newState)
         return { ...newState, sequencerPlayback}
       } else {
@@ -251,11 +276,13 @@ function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
   if (state.sequencerSelection === undefined) {
     return state
   } else {
-    const sequence = setInSequence(state.sequencerSelection, newStep, state.sequence)
+    const sequenceToChange = selectedSequence(state)
+    const sequence = setInSequence(state.sequencerSelection, newStep, sequenceToChange)
     if (state.sequencerPlayback !== undefined){
       state.sequencerPlayback.stepEventsRef[0] = sequenceToEvents(state.pitches, sequence)
     }
-    return { ...state, sequence }
+    const sequences = updateAt(state.selectedSequenceIndex, _ => sequence, state.sequences)
+    return { ...state, sequences }
   }
 
 }
@@ -263,11 +290,12 @@ function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
 function startSequencer(state: AppState, dispatch: AppDispatch, fromStep: number = 0): SequencerPlaybackState {
   const synth = createSynth(state.waveform)
 
+  const sequence = selectedSequence(state)
   const currentStepIndex =
-    fromStep >= 0 && fromStep < state.sequence.steps.length ? fromStep : 0
+    fromStep >= 0 && fromStep < sequence.steps.length ? fromStep : 0
   const stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>] =
-    [sequenceToEvents(state.pitches, state.sequence)]
-  const stepTimes = [ ...sequenceToTimes(state.sequence) ]
+    [sequenceToEvents(state.pitches, sequence)]
+  const stepTimes = [ ...sequenceToTimes(sequence) ]
   const part = new Tone.Part(
     (time, { stepIndex }) => {
       for (const event of stepEventsRef[0][stepIndex]) {
@@ -277,8 +305,8 @@ function startSequencer(state: AppState, dispatch: AppDispatch, fromStep: number
     },
     stepTimes
   )
-  const loopLength = state.sequence.secondsPerStep * state.sequence.steps.length
-  const startOffset = state.sequence.secondsPerStep * currentStepIndex
+  const loopLength = sequence.secondsPerStep * sequence.steps.length
+  const startOffset = sequence.secondsPerStep * currentStepIndex
   Tone.Transport.cancel()
   Tone.Transport.start()
   part.loopStart = 0
