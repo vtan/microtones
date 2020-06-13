@@ -197,6 +197,7 @@ const Table = styled.table`
 
 const Row = styled.tr<{ isCurrentlyPlayed: boolean }>`
   background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "transparent" };
+  height: 1.6rem;
 
   &:nth-of-type(4n-3) {
     background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "#f0f0f0" };
@@ -207,6 +208,7 @@ const StepNumberCell = styled.td`
   width: 2rem;
   padding-right: 1rem;
   text-align: right;
+  vertical-align: baseline;
 `
 
 const Cell = styled.td<{ isSelected: boolean }>`
