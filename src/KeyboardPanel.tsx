@@ -1,7 +1,7 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch, SequencerPlaybackState } from "./AppReducer"
+import { AppDispatch } from "./AppReducer"
 import { Key } from "./Key"
 import { grayscaleColor, selectionColor } from "./Util"
 import { notesIn12Edo } from "./Note"
@@ -13,8 +13,7 @@ export interface Props {
   keys: ReadonlyArray<Key>,
   numberOfSubdivisons: number,
   keyboardOffset: number,
-  pressedKeyIndices: ReadonlyArray<number>,
-  sequencerPlayback?: SequencerPlaybackState
+  pressedKeyIndices: ReadonlyArray<number>
 }
 
 export function KeyboardPanel(props: Props) {
@@ -74,18 +73,7 @@ export function KeyboardPanel(props: Props) {
     []
   )
 
-  const { keys, pressedKeyIndices, keyboardOffset, numberOfSubdivisons, sequencerPlayback } = props
-
-  const allPressedKeyIndices = React.useMemo(
-    () => {
-      const playbackKeys = sequencerPlayback === undefined
-        ? []
-        : sequencerPlayback.stepEventsRef[0][sequencerPlayback.currentStepIndex]
-            .map(stepEvent => stepEvent.pitchIndex - keyboardOffset)
-      return [ ...pressedKeyIndices, ...playbackKeys ]
-    },
-    [pressedKeyIndices, keyboardOffset, sequencerPlayback]
-  )
+  const { keys, pressedKeyIndices, keyboardOffset, numberOfSubdivisons } = props
 
   const octave = React.useMemo(
     () => keyboardOffset / numberOfSubdivisons,
@@ -105,8 +93,8 @@ export function KeyboardPanel(props: Props) {
       <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
     </OctaveContainer>
     <Svg>
-      { keys.map((key, index) => key.isShort ? null : renderKey(key, index, allPressedKeyIndices)) }
-      { keys.map((key, index) => key.isShort ? renderKey(key, index, allPressedKeyIndices) : null) }
+      { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
+      { keys.map((key, index) => key.isShort ? renderKey(key, index, pressedKeyIndices) : null) }
       { keys.map((key, index) => renderKeyLabels(key, index)) }
     </Svg>
   </Container>

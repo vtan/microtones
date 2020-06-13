@@ -28,8 +28,7 @@ export function App() {
         keyboardOffset={keyboardOffset}
         numberOfSubdivisons={numberOfSubdivisions}
         pressedKeyIndices={pressedKeyIndices}
-        sequencerPlayback={sequencerPlayback}
-        />
+      />
       { openPanel === "sequencer"
           ? <SequencerPanel
               dispatch={dispatch}
