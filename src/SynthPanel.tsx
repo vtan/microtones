@@ -1,7 +1,8 @@
 import * as React from "react"
 
-import { AppDispatch, Waveform, waveforms } from "./AppReducer"
+import { AppDispatch } from "./AppReducer"
 import { Label } from "./InputComponents"
+import { Waveform, allWaveforms } from "./Waveform"
 
 interface Props {
   dispatch: AppDispatch,
@@ -15,7 +16,7 @@ export function SynthPanel({ dispatch, waveform }: Props) {
       onChange={ e => dispatch({ type: "setWaveform", waveform: e.target.value as Waveform }) }
       value={waveform}
     >
-      { waveforms.map(w => <option key={w} value={w}>{w}</option>) }
+      { allWaveforms.map(w => <option key={w} value={w}>{w}</option>) }
     </select>
   </>
 }

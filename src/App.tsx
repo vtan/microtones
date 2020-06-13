@@ -1,20 +1,26 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { appReducer, initialAppState } from "./AppReducer"
+import { appReducer, AppState, initializeFromProject } from "./AppReducer"
 import { addGlobalKeyListeners } from "./GlobalKeyListener"
 import { KeyboardPanel } from "./KeyboardPanel"
 import { Navigation } from "./Navigation"
+import { importFromHash } from "./ProjectExporter"
 import { SequencerPanel } from "./SequencerPanel"
 import { SynthPanel } from "./SynthPanel"
 import { TuningPanel } from "./TuningPanel"
 
+function initializeState(): AppState {
+  return initializeFromProject(importFromHash(window.location.hash))
+}
+
 export function App() {
-  const [state, dispatch] = React.useReducer(appReducer, initialAppState)
+  const [state, dispatch] = React.useReducer(appReducer, undefined, initializeState)
   const
     { openPanel, numberOfSubdivisions, displayedAccidental, waveform
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
     , sequences, selectedSequenceIndex, sequencerSelection, sequencerPlayback
+    , shareUrl
     } = state
 
   React.useEffect(() => addGlobalKeyListeners(dispatch), [])
@@ -37,7 +43,8 @@ export function App() {
               displayedAccidental={displayedAccidental}
               pitches={pitches}
               selection={sequencerSelection}
-              playback={sequencerPlayback} />
+              playback={sequencerPlayback}
+              shareUrl={shareUrl} />
         : openPanel === "tuning"
           ? <TuningPanel
               dispatch={dispatch}

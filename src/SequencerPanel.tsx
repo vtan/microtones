@@ -16,11 +16,12 @@ interface Props {
   displayedAccidental: Accidental,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
-  playback?: SequencerPlaybackState
+  playback?: SequencerPlaybackState,
+  shareUrl: string
 }
 
 export function SequencerPanel(
-  { dispatch, sequences, selectedSequenceIndex, displayedAccidental, pitches, selection, playback }: Props
+  { dispatch, sequences, selectedSequenceIndex, displayedAccidental, pitches, selection, playback, shareUrl }: Props
 ) {
   React.useEffect(
     () => {
@@ -68,7 +69,16 @@ export function SequencerPanel(
     [dispatchTempoChange]
   )
 
+  const onShare = React.useCallback(
+    () => dispatch({ type: "shareProject"} ),
+    []
+  )
+
   return <>
+    <div>
+      <button onClick={onShare}>Share</button>
+      <input readOnly value={shareUrl} />
+    </div>
     <div>
       <Label>Steps</Label>
       <input onChange={onStepsChange} type="number" min={4} max={256} value={sequence.steps.length} />

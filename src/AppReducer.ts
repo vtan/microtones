@@ -1,14 +1,13 @@
 import * as Tone from "tone"
 
 import { Key, keyboardFromPitches } from "./Key"
-import { notesToPitches, Pitch } from "./Pitch"
 import { equalOctaveSubdivisions, Note, Accidental } from "./Note"
+import { notesToPitches, Pitch } from "./Pitch"
+import { Project, emptyProject } from "./Project"
 import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
 import { updateAt } from "./Util"
-
-export type Waveform = "triangle" | "sawtooth" | "square" | "sine" | "sine3"
-
-export const waveforms: ReadonlyArray<Waveform> = ["triangle", "sawtooth", "square", "sine", "sine3"]
+import { Waveform } from "./Waveform"
+import { exportToHash } from "./ProjectExporter"
 
 export type Panel = "sequencer" | "tuning" | "synth"
 
@@ -29,7 +28,8 @@ export interface AppState {
   sequences: ReadonlyArray<Sequence>,
   selectedSequenceIndex: number,
   sequencerSelection?: SequenceIndex,
-  sequencerPlayback?: SequencerPlaybackState
+  sequencerPlayback?: SequencerPlaybackState,
+  shareUrl: string
 }
 
 export interface SequencerPlaybackState {
@@ -39,28 +39,29 @@ export interface SequencerPlaybackState {
   dispatch: AppDispatch
 }
 
-export const initialAppState: AppState = initializeState()
+export function initializeFromProject(project: Project | undefined): AppState {
+  const openPanel = project === undefined ? "tuning" : "sequencer"
 
-function initializeState(): AppState {
-  const numberOfSubdivisions = 12
+  const { waveform, numberOfSubdivisions,  displayedAccidental, sequences } = project || emptyProject
+
   const keyboardOffset = 4 * numberOfSubdivisions
-  const waveform = "triangle"
   const synth = createSynth(waveform)
   const { notes, pitches, keys } = notesPitchesKeys(numberOfSubdivisions, keyboardOffset)
 
   return {
-    openPanel: "tuning",
+    openPanel,
     synth,
     waveform,
     numberOfSubdivisions,
-    displayedAccidental: "sharp",
+    displayedAccidental,
     notes,
     pitches,
     keys,
     keyboardOffset,
     pressedKeyIndices: [],
-    sequences: [emptySequence],
-    selectedSequenceIndex: 0
+    sequences,
+    selectedSequenceIndex: 0,
+    shareUrl: ""
   }
 }
 
@@ -126,6 +127,7 @@ export type AppAction =
   | { type: "setSequenceTempo", secondsPerStep: number }
   | { type: "toggleSequencerPlaying", dispatch: AppDispatch }
   | { type: "setSequencerPlaybackStepIndex", stepIndex: number }
+  | { type: "shareProject" }
 
 export type AppDispatch = (_: AppAction) => void
 
@@ -144,12 +146,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         keyboardOffset,
         sequences: [emptySequence],
         selectedSequenceIndex: 0,
-        sequencerPlayback: undefined
+        sequencerPlayback: undefined,
+        shareUrl: ""
       }
     }
 
     case "setDisplayedAccidental":
-      return { ...state, displayedAccidental: action.displayedAccidental }
+      return { ...state, displayedAccidental: action.displayedAccidental, shareUrl: "" }
 
     case "setKeyboardOffset": {
       // TODO duplication
@@ -168,7 +171,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         if (state.sequencerPlayback !== undefined) {
           state.sequencerPlayback.synth.set({ oscillator: { type: waveform } })
         }
-        return { ...state, waveform }
+        return { ...state, waveform, shareUrl: "" }
       } else {
         return state
       }
@@ -235,7 +238,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       )
       const newState = { ...state, sequences }
       const sequencerPlayback = restartSequencer(newState)
-      return { ...newState, sequencerPlayback }
+      return { ...newState, sequencerPlayback, shareUrl: "" }
     }
 
     case "setSequenceTempo":
@@ -247,7 +250,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         )
         const newState = { ...state, sequences }
         const sequencerPlayback = restartSequencer(newState)
-        return { ...newState, sequencerPlayback}
+        return { ...newState, sequencerPlayback, shareUrl:"" }
       } else {
         return state
       }
@@ -269,6 +272,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         const sequencerPlayback = { ...state.sequencerPlayback, currentStepIndex: action.stepIndex }
         return { ...state, sequencerPlayback }
       }
+
+    case "shareProject": {
+      let shareUrl
+      try {
+        const hash = exportToHash(state)
+        const url = new URL(window.location.href)
+        url.hash = hash
+        shareUrl = url.toString()
+      } catch (e) {
+        console.warn(`Failed to export project to URL: ${e}`)
+      }
+      return shareUrl === undefined ? state : { ...state, shareUrl }
+    }
   }
 }
 
@@ -282,7 +298,7 @@ function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
       state.sequencerPlayback.stepEventsRef[0] = sequenceToEvents(state.pitches, sequence)
     }
     const sequences = updateAt(state.selectedSequenceIndex, _ => sequence, state.sequences)
-    return { ...state, sequences }
+    return { ...state, sequences, shareUrl: "" }
   }
 
 }

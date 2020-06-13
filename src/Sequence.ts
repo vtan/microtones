@@ -34,7 +34,7 @@ export const emptySequence: Sequence = {
   secondsPerStep: 0.2
 }
 
-function emptySteps(numberOfSteps: number, numberOfTracks: number): ReadonlyArray<ReadonlyArray<Step>> {
+export function emptySteps(numberOfSteps: number, numberOfTracks: number): ReadonlyArray<ReadonlyArray<Step>> {
   return [ ...Array(numberOfSteps) ].map(_ => emptyStep(numberOfTracks))
 }
 
