@@ -20,5 +20,22 @@ module.exports = {
     new HtmlWebpackPlugin({
       "template": "src/index.html"
     })
-  ]
+  ],
+
+  output: {
+    filename: "[name].[contenthash].js"
+  },
+
+  optimization: {
+    runtimeChunk: "single",
+    splitChunks: {
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: "vendors",
+          chunks: "all"
+        }
+      }
+    }
+  }
 };

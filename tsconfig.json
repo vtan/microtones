@@ -2,7 +2,8 @@
   "compilerOptions": {
     // Project options
     "target": "es2015",
-    "module": "commonjs",
+    "module": "ES2015",
+    "moduleResolution": "Node",
     "lib": [ "ES2019", "DOM" ],
     "jsx": "react",
     "sourceMap": true,
