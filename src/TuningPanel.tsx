@@ -48,8 +48,8 @@ export function TuningPanel({ dispatch, numberOfSubdivisions, displayedAccidenta
         onChange={ e => dispatch({ type: "setDisplayedAccidental", displayedAccidental: e.target.value as Accidental }) }
         value={displayedAccidental}
       >
-        <option value="sharp">♯</option>
-        <option value="flat">♭</option>
+        <option value="sharp">#</option>
+        <option value="flat">b</option>
       </select>
     </div>
     <Table>
