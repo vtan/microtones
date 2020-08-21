@@ -74,28 +74,40 @@ export function SequencerPanel(
     []
   )
 
+  const shareUrlRef = React.useRef<null | HTMLInputElement>(null)
+  React.useEffect(
+    () => {
+      if (shareUrl !== "") {
+        navigator.clipboard.writeText(shareUrl)
+        if (shareUrlRef.current !== null) {
+          shareUrlRef.current.select()
+        }
+      }
+    },
+    [shareUrl]
+  )
+
   return <>
-    <div>
-      <button onClick={onShare}>Share</button>
-      <input readOnly value={shareUrl} />
-    </div>
-    <div>
+    <InputRow>
+      <Button onClick={onShare}>Share & copy URL</Button>
+      <Input ref={shareUrlRef} readOnly value={shareUrl} style={{ width: "20rem" }} />
+    </InputRow>
+    <InputRow>
       <Label>Steps</Label>
-      <input onChange={onStepsChange} type="number" min={4} max={256} value={sequence.steps.length} />
-    </div>
-    <div>
+      <Input onChange={onStepsChange} type="number" min={4} max={256} value={sequence.steps.length} />
+    </InputRow>
+    <InputRow>
       <Label>Tempo</Label>
       <TempoText>{displayedTempo.toFixed(0)}</TempoText>
-      <input onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} />
-    </div>
-    <Toolbar>
+      <input onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} style={{ width: "16rem" }} />
+    </InputRow>
+    <InputRow>
       <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }>
         { playback === undefined ? "▶" : "◼" }
       </Button>
-      <Separator />
-      <Button onClick={ () => deleteSelectedStep(dispatch) }>Delete</Button>
-      <Button onClick={ () => holdSelectedStep(dispatch) }>Hold</Button>
-    </Toolbar>
+      <Button onClick={ () => deleteSelectedStep(dispatch) }>Delete note</Button>
+      <Button onClick={ () => holdSelectedStep(dispatch) }>Hold note</Button>
+    </InputRow>
     <Table>
       <thead>
         <tr>
@@ -172,33 +184,29 @@ const keyDownListener = (dispatch: AppDispatch) => (e: KeyboardEvent): void => {
   }
 }
 
-const Toolbar = styled.div`
+const InputRow = styled.div`
   margin-bottom: 0.5rem;
-`
+
+  & > :not(:first-child) {
+    margin-left: 0.5rem;
+  }
+`;
 
 const Button = styled.button`
-  margin: 0 0.25rem;
-  padding: 0.5rem;
-
-  background-color: transparent;
-  border: 0;
+  padding: 0.25rem 0.5rem;
   color: inherit;
-  cursor: pointer;
   font: inherit;
+`
 
-  &:hover {
-    background-color: #f3f3f3;
-  }
+const Input = styled.input`
+  padding: 0.125rem 0.5rem;
+  color: inherit;
+  font: inherit;
 `
 
 const TempoText = styled.span`
   display: inline-block;
   width: 2.5rem;
-`
-
-const Separator = styled.div`
-  display: inline-block;
-  width: 1rem;
 `
 
 const Table = styled.table`
