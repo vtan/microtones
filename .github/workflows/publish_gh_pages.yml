@@ -1,0 +1,22 @@
+name: Publish GitHub Pages
+on: [workflow_dispatch]
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Install and Build
+        run: |
+          yarn install
+          yarn build
+
+      - name: Publish Pages
+        uses: JamesIves/github-pages-deploy-action@3.5.9
+        with:
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: dist
