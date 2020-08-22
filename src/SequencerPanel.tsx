@@ -102,13 +102,16 @@ export function SequencerPanel(
       <input onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} style={{ width: "16rem" }} />
     </InputRow>
     <InputRow>
-      <Button onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }>
-        { playback === undefined ? "▶" : "◼" }
+      <Button
+        onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }
+        style={{ width: "3.5rem" }}
+      >
+        { playback === undefined ? "Play" : "Stop" }
       </Button>
-      <Button onClick={ () => deleteSelectedStep(dispatch) }>Delete note</Button>
-      <Button onClick={ () => holdSelectedStep(dispatch) }>Hold note</Button>
+      <Button onClick={ () => deleteSelectedStep(dispatch) } disabled={ selection === undefined }>Delete note</Button>
+      <Button onClick={ () => holdSelectedStep(dispatch) } disabled={ selection === undefined }>Hold note</Button>
     </InputRow>
-    <Table>
+    <SequencerTable>
       <thead>
         <tr>
           <th key={-1} />
@@ -121,7 +124,7 @@ export function SequencerPanel(
         { sequence.steps.map((stepsPerTrack, i) => {
             const isStepSelected = selection !== undefined && selection.step === i
             const isCurrentlyPlayed = playback !== undefined && playback.currentStepIndex === i
-            return <Row key={i} isCurrentlyPlayed={isCurrentlyPlayed}>
+            return <SequencerRow key={i} isCurrentlyPlayed={isCurrentlyPlayed}>
               <StepNumberCell key={i}>{ i + 1 }</StepNumberCell>
               { stepsPerTrack.map((step, j) => {
                   const isSelected = isStepSelected && selection !== undefined && selection.track === j
@@ -132,10 +135,10 @@ export function SequencerPanel(
                     onClick={onCellClick({ step: i, track: j })}
                   >{content}</Cell>
               }) }
-            </Row>
+            </SequencerRow>
         }) }
       </tbody>
-    </Table>
+    </SequencerTable>
     <Hint>Use the keyboard to enter & delete notes, hold notes (<kbd>↵</kbd>), start/stop playback (<kbd>Space</kbd>) and move the selection</Hint>
   </>
 }
@@ -150,7 +153,7 @@ function cellContent(step: Step, pitches: ReadonlyArray<Pitch>, displayedAcciden
       const cents = diffText(pitch.note)
       return <>{note}<sub>{pitch.octave}</sub> {cents}</>
     case "hold":
-      return "|"
+      return <small>hold</small>
   }
 }
 
@@ -209,11 +212,13 @@ const TempoText = styled.span`
   width: 2.5rem;
 `
 
-const Table = styled.table`
-  border-collapse: separate; border-spacing: 0;
+const SequencerTable = styled.table`
+  margin-top: 1rem;
+  border-collapse: separate;
+  border-spacing: 0;
 `
 
-const Row = styled.tr<{ isCurrentlyPlayed: boolean }>`
+const SequencerRow = styled.tr<{ isCurrentlyPlayed: boolean }>`
   background-color: ${props => props.isCurrentlyPlayed ? playbackColor : "transparent" };
   height: 1.6rem;
 
@@ -232,4 +237,8 @@ const StepNumberCell = styled.td`
 const Cell = styled.td<{ isSelected: boolean }>`
   width: 6rem;
   background-color: ${props => props.isSelected ? selectionColor : "transparent" }
+
+  & small {
+    font-size: 70%;
+  }
 `
