@@ -1,9 +1,9 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch } from "./AppReducer"
+import { AppDispatch } from "../AppReducer"
 import { Panel } from "./Panel"
-import { selectionColor } from "./Util"
+import { selectionColor } from "../Util"
 
 interface Props {
   dispatch: AppDispatch,

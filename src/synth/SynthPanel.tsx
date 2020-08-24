@@ -1,7 +1,7 @@
 import * as React from "react"
 
-import { AppDispatch } from "./AppReducer"
-import { Label } from "./InputComponents"
+import { AppDispatch } from "../AppReducer"
+import { Label } from "../InputComponents"
 import { Waveform, allWaveforms } from "./Waveform"
 
 interface Props {

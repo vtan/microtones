@@ -1,8 +1,8 @@
 import * as Tone from "tone"
 
-import { AppState } from "./AppState"
+import { AppState } from "../AppState"
 import { sequenceToEvents, StepEvent, sequenceToTimes } from "./Sequence"
-import { waveformToSynth } from "./Waveform"
+import { waveformToSynth } from "../synth/Waveform"
 
 export interface SequencerPlaybackState {
   synth: Tone.PolySynth,

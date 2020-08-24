@@ -1,10 +1,10 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch } from "./AppReducer"
+import { AppDispatch } from "../AppReducer"
 import { Key } from "./Key"
-import { grayscaleColor, selectionColor } from "./Util"
-import { notesIn12Edo } from "./Note"
+import { grayscaleColor, selectionColor } from "../Util"
+import { notesIn12Edo } from "../Note"
 
 const keyWidthScale = 36
 

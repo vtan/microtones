@@ -1,13 +1,13 @@
 import * as Tone from "tone"
 
-import { Key, keyboardFromPitches } from "./Key"
+import { Key, keyboardFromPitches } from "./keyboard/Key"
 import { equalOctaveSubdivisions, Note, Accidental } from "./Note"
-import { Panel } from "./Panel"
+import { Panel } from "./navigation/Panel"
 import { notesToPitches, Pitch } from "./Pitch"
-import { Project, emptyProject } from "./Project"
-import { Sequence, SequenceIndex } from "./Sequence"
-import { SequencerPlaybackState } from "./SequencerPlayback"
-import { Waveform, waveformToSynth } from "./Waveform"
+import { Project, emptyProject } from "./project/Project"
+import { Sequence, SequenceIndex } from "./sequencer/Sequence"
+import { SequencerPlaybackState } from "./sequencer/SequencerPlayback"
+import { Waveform, waveformToSynth } from "./synth/Waveform"
 
 export interface AppState {
   openPanel: Panel,

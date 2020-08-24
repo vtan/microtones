@@ -1,11 +1,11 @@
 import { AppState, notesPitchesKeysForTuning, keyboardOctavesForTuning } from "./AppState"
-import { keyboardFromPitches } from "./Key"
+import { keyboardFromPitches } from "./keyboard/Key"
 import { Accidental } from "./Note"
-import { Panel } from "./Panel"
-import { exportToHash } from "./ProjectExporter"
-import { emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, resizeSequenceSteps } from "./Sequence"
-import { restartSequencerPlayback, startSequencerPlayback, stopSequencerPlayback } from "./SequencerPlayback"
-import { Waveform } from "./Waveform"
+import { Panel } from "./navigation/Panel"
+import { exportToHash } from "./project/ProjectExporter"
+import { emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, resizeSequenceSteps } from "./sequencer/Sequence"
+import { restartSequencerPlayback, startSequencerPlayback, stopSequencerPlayback } from "./sequencer/SequencerPlayback"
+import { Waveform } from "./synth/Waveform"
 
 export type AppAction =
   { type: "openPanel", panel: Panel }

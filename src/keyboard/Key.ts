@@ -1,5 +1,5 @@
-import { Pitch } from "./Pitch"
-import { noteColor } from "./Note"
+import { Pitch } from "../Pitch"
+import { noteColor } from "../Note"
 
 export interface Key {
   x: number,

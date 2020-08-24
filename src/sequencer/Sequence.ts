@@ -1,5 +1,5 @@
-import { updateAt } from "./Util"
-import { Pitch } from "./Pitch"
+import { updateAt } from "../Util"
+import { Pitch } from "../Pitch"
 
 export interface Sequence {
   numberOfTracks: number,

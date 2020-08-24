@@ -3,12 +3,12 @@ import styled from "styled-components"
 
 import { appReducer } from "./AppReducer"
 import { AppState, initializeAppState } from "./AppState"
-import { addGlobalKeyListeners } from "./GlobalKeyListener"
-import { KeyboardPanel } from "./KeyboardPanel"
-import { Navigation } from "./Navigation"
-import { importFromHash } from "./ProjectExporter"
-import { SequencerPanel } from "./SequencerPanel"
-import { SynthPanel } from "./SynthPanel"
+import { addGlobalKeyListeners } from "./keyboard/GlobalKeyListener"
+import { KeyboardPanel } from "./keyboard/KeyboardPanel"
+import { Navigation } from "./navigation/Navigation"
+import { importFromHash } from "./project/ProjectExporter"
+import { SequencerPanel } from "./sequencer/SequencerPanel"
+import { SynthPanel } from "./synth/SynthPanel"
 import { TuningPanel } from "./TuningPanel"
 
 function initializeState(): AppState {

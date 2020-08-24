@@ -3,7 +3,7 @@ import styled from "styled-components"
 
 import { AppDispatch } from "./AppReducer"
 import { Label, Hint } from "./InputComponents"
-import { short12EdoKeys, Key } from "./Key"
+import { short12EdoKeys, Key } from "./keyboard/Key"
 import { Note, noteColor, notesIn12Edo, diffText, Accidental } from "./Note"
 import { grayscaleColor, selectionColor } from "./Util"
 

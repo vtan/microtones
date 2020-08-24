@@ -1,9 +1,9 @@
 import * as Pako from "pako"
 
-import { Step, emptySteps } from "./Sequence"
+import { Step, emptySteps } from "../sequencer/Sequence"
 import { Project } from "./Project"
-import { allWaveforms } from "./Waveform"
-import { Accidental } from "./Note"
+import { allWaveforms } from "../synth/Waveform"
+import { Accidental } from "../Note"
 
 const hashPrefix = "#sequence/1="
 

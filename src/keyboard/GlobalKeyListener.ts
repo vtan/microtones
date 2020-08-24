@@ -1,7 +1,5 @@
+import { AppDispatch } from "../AppReducer"
 import { keyboardLookup } from "./Key"
-import { AppDispatch } from "./AppReducer"
-
-// TODO do not handle keys if a modifier key is pressed
 
 const keyDownListener = (dispatch: AppDispatch) => (e: KeyboardEvent): void => {
   const isModifierPressed = e.shiftKey || e.ctrlKey || e.altKey || e.metaKey

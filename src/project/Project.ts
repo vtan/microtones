@@ -1,6 +1,6 @@
-import { Accidental } from "./Note"
-import { Sequence, emptySequence } from "./Sequence"
-import { Waveform } from "./Waveform"
+import { Accidental } from "../Note"
+import { Sequence, emptySequence } from "../sequencer/Sequence"
+import { Waveform } from "../synth/Waveform"
 
 export interface Project {
   waveform: Waveform,
