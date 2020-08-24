@@ -58,8 +58,7 @@ function exportProject(project: Project): ExportedProject {
     case "flat": accidental = 1; break
   }
 
-  const { numberOfSubdivisions } = project
-  const sequence = project.sequences[0]
+  const { numberOfSubdivisions, sequence } = project
   const { numberOfTracks, secondsPerStep, steps } = sequence
   const numberOfSteps = steps.length
   const events: Array<ExportedStep> = []
@@ -129,8 +128,7 @@ function importProject(exported: ExportedProject): Project {
   })
 
   const sequence = { numberOfTracks, secondsPerStep, steps }
-  const sequences = [sequence]
-  return { waveform, numberOfSubdivisions, displayedAccidental, sequences }
+  return { waveform, numberOfSubdivisions, displayedAccidental, sequence }
 }
 
 function compressProject(project: ExportedProject): string {

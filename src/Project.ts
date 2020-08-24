@@ -6,12 +6,12 @@ export interface Project {
   waveform: Waveform,
   numberOfSubdivisions: number,
   displayedAccidental: Accidental,
-  sequences: ReadonlyArray<Sequence>
+  sequence: Sequence
 }
 
 export const emptyProject: Project = {
   waveform: "triangle",
   numberOfSubdivisions: 12,
   displayedAccidental: "sharp",
-  sequences: [emptySequence]
+  sequence: emptySequence
 }

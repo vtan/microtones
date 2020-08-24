@@ -19,7 +19,7 @@ export function App() {
   const
     { openPanel, numberOfSubdivisions, displayedAccidental, waveform
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
-    , sequences, selectedSequenceIndex, sequencerSelection, sequencerPlayback
+    , sequence, sequencerSelection, sequencerPlayback
     , shareUrl
     } = state
 
@@ -38,8 +38,7 @@ export function App() {
       { openPanel === "sequencer"
           ? <SequencerPanel
               dispatch={dispatch}
-              sequences={sequences}
-              selectedSequenceIndex={selectedSequenceIndex}
+              sequence={sequence}
               displayedAccidental={displayedAccidental}
               pitches={pitches}
               selection={sequencerSelection}

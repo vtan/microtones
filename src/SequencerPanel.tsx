@@ -2,7 +2,7 @@ import * as _ from "lodash"
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch, AppAction, SequencerPlaybackState, selectedSequence } from "./AppReducer"
+import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText, Accidental } from "./Note"
@@ -11,8 +11,7 @@ import { Hint, Label } from "./InputComponents"
 
 interface Props {
   dispatch: AppDispatch,
-  sequences: ReadonlyArray<Sequence>,
-  selectedSequenceIndex: number,
+  sequence: Sequence,
   displayedAccidental: Accidental,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
@@ -21,7 +20,7 @@ interface Props {
 }
 
 export function SequencerPanel(
-  { dispatch, sequences, selectedSequenceIndex, displayedAccidental, pitches, selection, playback, shareUrl }: Props
+  { dispatch, sequence, displayedAccidental, pitches, selection, playback, shareUrl }: Props
 ) {
   React.useEffect(
     () => {
@@ -41,11 +40,6 @@ export function SequencerPanel(
     (e: React.ChangeEvent<HTMLInputElement>) =>
       dispatch({ type: "resizeSequenceSteps", numberOfSteps: parseInt(e.target.value) }),
     []
-  )
-
-  const sequence = React.useMemo(
-    () => selectedSequence({ sequences, selectedSequenceIndex }),
-    [sequences, selectedSequenceIndex]
   )
 
   const tempo = React.useMemo(
