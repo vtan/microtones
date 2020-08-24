@@ -1,101 +1,11 @@
-import * as Tone from "tone"
-
-import { Key, keyboardFromPitches } from "./Key"
-import { equalOctaveSubdivisions, Note, Accidental } from "./Note"
-import { notesToPitches, Pitch } from "./Pitch"
-import { Project, emptyProject } from "./Project"
-import { Sequence, emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, StepEvent, sequenceToTimes, resizeSequenceSteps } from "./Sequence"
-import { Waveform } from "./Waveform"
+import { AppState, notesPitchesKeysForTuning, keyboardOctavesForTuning } from "./AppState"
+import { keyboardFromPitches } from "./Key"
+import { Accidental } from "./Note"
+import { Panel } from "./Panel"
 import { exportToHash } from "./ProjectExporter"
-
-export type Panel = "sequencer" | "tuning" | "synth"
-
-const minOctave: number = 0
-const maxOctave: number = 8
-
-export interface AppState {
-  openPanel: Panel,
-  synth: Tone.PolySynth,
-  waveform: Waveform,
-  numberOfSubdivisions: number,
-  displayedAccidental: Accidental,
-  notes: ReadonlyArray<Note>,
-  pitches: ReadonlyArray<Pitch>,
-  keys: ReadonlyArray<Key>,
-  keyboardOffset: number,
-  pressedKeyIndices: ReadonlyArray<number>,
-  sequence: Sequence,
-  sequencerSelection?: SequenceIndex,
-  sequencerPlayback?: SequencerPlaybackState,
-  shareUrl: string
-}
-
-export interface SequencerPlaybackState {
-  synth: Tone.PolySynth,
-  stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>],
-  currentStepIndex: number,
-  dispatch: AppDispatch
-}
-
-export function initializeFromProject(project: Project | undefined): AppState {
-  const openPanel = project === undefined ? "tuning" : "sequencer"
-
-  const { waveform, numberOfSubdivisions,  displayedAccidental, sequence } = project || emptyProject
-
-  const keyboardOffset = 4 * numberOfSubdivisions
-  const synth = createSynth(waveform)
-  const { notes, pitches, keys } = notesPitchesKeys(numberOfSubdivisions, keyboardOffset)
-
-  return {
-    openPanel,
-    synth,
-    waveform,
-    numberOfSubdivisions,
-    displayedAccidental,
-    notes,
-    pitches,
-    keys,
-    keyboardOffset,
-    pressedKeyIndices: [],
-    sequence,
-    shareUrl: ""
-  }
-}
-
-function createSynth(waveform: Waveform): Tone.PolySynth {
-  return new Tone.PolySynth(Tone.Synth, {
-    volume: -6,
-    oscillator: { type: waveform },
-    envelope: {
-      attack: 0.005,
-      decay: 0.1,
-      release: 1,
-      sustain: 0.2,
-    }
-  }).toDestination()
-}
-
-function keyboardOctavesForTuning(numberOfSubdivisions: number): number {
-  if (numberOfSubdivisions <= 10) {
-    return 4
-  } else if (numberOfSubdivisions <= 15) {
-    return 3
-  } else if (numberOfSubdivisions <= 21) {
-    return 2
-  } else {
-    return 1
-  }
-}
-
-function notesPitchesKeys(numberOfSubdivisions: number, keyboardOffset: number) {
-  const notes = equalOctaveSubdivisions(numberOfSubdivisions)
-  // Hacky: + 2 below so the highest C is also included
-  const pitches = notesToPitches(16.0352, minOctave, maxOctave - minOctave + 2, notes)
-  const octaves = keyboardOctavesForTuning(numberOfSubdivisions)
-  const keyPitches = pitches.slice(keyboardOffset, keyboardOffset + octaves * numberOfSubdivisions + 1)
-  const keys = keyboardFromPitches(keyPitches)
-  return { notes, pitches, keys }
-}
+import { emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, resizeSequenceSteps } from "./Sequence"
+import { restartSequencerPlayback, startSequencerPlayback, stopSequencerPlayback } from "./SequencerPlayback"
+import { Waveform } from "./Waveform"
 
 export type AppAction =
   { type: "openPanel", panel: Panel }
@@ -123,11 +33,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "setNumberOfSubdivisions": {
       const keyboardOffset = 4 * action.numberOfSubdivisions
-      stopSequencer(state)
+      stopSequencerPlayback(state)
       return {
         ...state,
         numberOfSubdivisions: action.numberOfSubdivisions,
-        ...notesPitchesKeys(action.numberOfSubdivisions, keyboardOffset),
+        ...notesPitchesKeysForTuning(action.numberOfSubdivisions, keyboardOffset),
         keyboardOffset,
         sequence: emptySequence,
         sequencerPlayback: undefined,
@@ -216,7 +126,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "resizeSequenceSteps": {
       const sequence = resizeSequenceSteps(action.numberOfSteps, state.sequence)
       const newState = { ...state, sequence }
-      const sequencerPlayback = restartSequencer(newState)
+      const sequencerPlayback = restartSequencerPlayback(newState)
       return { ...newState, sequencerPlayback, shareUrl: "" }
     }
 
@@ -224,7 +134,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (action.secondsPerStep > 0) {
         const sequence = { ...state.sequence, secondsPerStep: action.secondsPerStep }
         const newState = { ...state, sequence }
-        const sequencerPlayback = restartSequencer(newState)
+        const sequencerPlayback = restartSequencerPlayback(newState)
         return { ...newState, sequencerPlayback, shareUrl: "" }
       } else {
         return state
@@ -232,10 +142,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case "toggleSequencerPlaying": {
       if (state.sequencerPlayback === undefined) {
-        const sequencerPlayback = startSequencer(state, action.dispatch)
+        const onPlaybackStep = (stepIndex: number) =>
+          action.dispatch({ type: "setSequencerPlaybackStepIndex", stepIndex })
+        const sequencerPlayback = startSequencerPlayback(state, onPlaybackStep)
         return { ...state, sequencerPlayback }
       } else {
-        stopSequencer(state)
+        stopSequencerPlayback(state)
         return { ...state, sequencerPlayback: undefined }
       }
     }
@@ -272,54 +184,5 @@ function changeSelectedSequencerStep(state: AppState, newStep: Step): AppState {
       state.sequencerPlayback.stepEventsRef[0] = sequenceToEvents(state.pitches, sequence)
     }
     return { ...state, sequence, shareUrl: "" }
-  }
-}
-
-function startSequencer(state: AppState, dispatch: AppDispatch, fromStep: number = 0): SequencerPlaybackState {
-  const synth = createSynth(state.waveform)
-
-  const sequence = state.sequence
-  const currentStepIndex =
-    fromStep >= 0 && fromStep < sequence.steps.length ? fromStep : 0
-  const stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>] =
-    [sequenceToEvents(state.pitches, sequence)]
-  const stepTimes = [ ...sequenceToTimes(sequence) ]
-  const part = new Tone.Part(
-    (time, { stepIndex }) => {
-      for (const event of stepEventsRef[0][stepIndex]) {
-        synth.triggerAttackRelease(event.frequency, event.duration, time)
-      }
-      dispatch({ type: "setSequencerPlaybackStepIndex", stepIndex })
-    },
-    stepTimes
-  )
-  const loopLength = sequence.secondsPerStep * sequence.steps.length
-  const startOffset = sequence.secondsPerStep * currentStepIndex
-  Tone.Transport.cancel()
-  Tone.Transport.start()
-  part.loopStart = 0
-  part.loopEnd = loopLength
-  part.loop = true
-  part.start(0, startOffset)
-
-  return { synth, stepEventsRef, dispatch, currentStepIndex }
-}
-
-function restartSequencer(state: AppState): SequencerPlaybackState | undefined {
-  if (state.sequencerPlayback === undefined) {
-    return undefined
-  } else {
-    stopSequencer(state)
-    return startSequencer(state, state.sequencerPlayback.dispatch, state.sequencerPlayback.currentStepIndex)
-  }
-}
-
-function stopSequencer(state: AppState): void {
-  Tone.Transport.stop()
-  Tone.Transport.cancel()
-  if (state.sequencerPlayback !== undefined) {
-    const synth = state.sequencerPlayback.synth
-    synth.releaseAll()
-    synth.disconnect()
   }
 }

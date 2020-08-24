@@ -2,12 +2,13 @@ import * as _ from "lodash"
 import * as React from "react"
 import styled from "styled-components"
 
-import { AppDispatch, AppAction, SequencerPlaybackState } from "./AppReducer"
+import { AppDispatch, AppAction } from "./AppReducer"
 import { Pitch } from "./Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText, Accidental } from "./Note"
 import { selectionColor, playbackColor } from "./Util"
 import { Hint, Label } from "./InputComponents"
+import { SequencerPlaybackState } from "./SequencerPlayback"
 
 interface Props {
   dispatch: AppDispatch,

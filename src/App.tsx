@@ -1,7 +1,8 @@
 import * as React from "react"
 import styled from "styled-components"
 
-import { appReducer, AppState, initializeFromProject } from "./AppReducer"
+import { appReducer } from "./AppReducer"
+import { AppState, initializeAppState } from "./AppState"
 import { addGlobalKeyListeners } from "./GlobalKeyListener"
 import { KeyboardPanel } from "./KeyboardPanel"
 import { Navigation } from "./Navigation"
@@ -11,7 +12,7 @@ import { SynthPanel } from "./SynthPanel"
 import { TuningPanel } from "./TuningPanel"
 
 function initializeState(): AppState {
-  return initializeFromProject(importFromHash(window.location.hash))
+  return initializeAppState(importFromHash(window.location.hash))
 }
 
 export function App() {
