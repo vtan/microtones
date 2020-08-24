@@ -90,7 +90,7 @@ export function KeyboardPanel(props: Props) {
   return <Container>
     <OctaveContainer>
       <OctaveLabel>Octave</OctaveLabel>
-      <input type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
+      <OctaveInput type="number" min={0} max={6} value={octave} onChange={onOctaveChange} />
     </OctaveContainer>
     <Svg>
       { keys.map((key, index) => key.isShort ? null : renderKey(key, index, pressedKeyIndices)) }
@@ -114,6 +114,10 @@ const OctaveContainer = styled.div`
 const OctaveLabel = styled.div`
   font-size: 0.8rem;
 `
+
+const OctaveInput = styled.input`
+  width: 2.5rem;
+`;
 
 const Svg = styled.svg`
   width: 100%;

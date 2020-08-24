@@ -99,7 +99,7 @@ export function SequencerPanel(
     <InputRow>
       <Label>Tempo</Label>
       <TempoText>{displayedTempo.toFixed(0)}</TempoText>
-      <input onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} style={{ width: "16rem" }} />
+      <TempoSlider onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} />
     </InputRow>
     <InputRow>
       <Button
@@ -197,8 +197,18 @@ const InputRow = styled.div`
 
 const Button = styled.button`
   padding: 0.25rem 0.5rem;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background-color: #f0f0f0;
   color: inherit;
   font: inherit;
+
+  &:disabled {
+    background-color: #ddd;
+  }
+  &:hover:not(:disabled) {
+    background-color: #f8f8f8;
+  }
 `
 
 const Input = styled.input`
@@ -212,8 +222,13 @@ const TempoText = styled.span`
   width: 2.5rem;
 `
 
+const TempoSlider = styled.input`
+  width: 16rem;
+  height: 0.75rem;
+`;
+
 const SequencerTable = styled.table`
-  margin-top: 1rem;
+  margin-top: 2rem;
   border-collapse: separate;
   border-spacing: 0;
 `
