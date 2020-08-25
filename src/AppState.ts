@@ -7,12 +7,12 @@ import { notesToPitches, Pitch } from "./Pitch"
 import { Project, emptyProject } from "./project/Project"
 import { Sequence, SequenceIndex } from "./sequencer/Sequence"
 import { SequencerPlaybackState } from "./sequencer/SequencerPlayback"
-import { Waveform, waveformToSynth } from "./synth/Waveform"
+import { Synth, createPlaybackSynth } from "./synth/Synth"
 
 export interface AppState {
   openPanel: Panel,
-  synth: Tone.PolySynth,
-  waveform: Waveform,
+  playbackSynth: Tone.PolySynth,
+  synth: Synth,
   numberOfSubdivisions: number,
   displayedAccidental: Accidental,
   notes: ReadonlyArray<Note>,
@@ -29,16 +29,16 @@ export interface AppState {
 export function initializeAppState(project: Project | undefined): AppState {
   const openPanel = project === undefined ? "tuning" : "sequencer"
 
-  const { waveform, numberOfSubdivisions,  displayedAccidental, sequence } = project || emptyProject
+  const { synth, numberOfSubdivisions,  displayedAccidental, sequence } = project || emptyProject
 
   const keyboardOffset = 4 * numberOfSubdivisions
-  const synth = waveformToSynth(waveform)
+  const playbackSynth = createPlaybackSynth(synth)
   const { notes, pitches, keys } = notesPitchesKeysForTuning(numberOfSubdivisions, keyboardOffset)
 
   return {
     openPanel,
+    playbackSynth,
     synth,
-    waveform,
     numberOfSubdivisions,
     displayedAccidental,
     notes,

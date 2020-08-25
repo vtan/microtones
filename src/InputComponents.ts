@@ -1,7 +1,17 @@
 import styled from "styled-components"
 
+export const InputRow = styled.div`
+  margin-bottom: 0.5rem;
+
+  & > :not(:first-child) {
+    margin-left: 0.5rem;
+  }
+`
+
 export const Label = styled.span`
-  margin-right: 1.5rem;
+  display: inline-block;
+  min-width: 6rem;
+  margin-right: 0.5rem;
   font-weight: bold;
 `
 

@@ -18,13 +18,20 @@ function initializeState(): AppState {
 export function App() {
   const [state, dispatch] = React.useReducer(appReducer, undefined, initializeState)
   const
-    { openPanel, numberOfSubdivisions, displayedAccidental, waveform
+    { openPanel, numberOfSubdivisions, displayedAccidental, synth
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
     , sequence, sequencerSelection, sequencerPlayback
     , shareUrl
     } = state
 
-  React.useEffect(() => addGlobalKeyListeners(dispatch), [])
+  React.useEffect(
+    () => {
+      const onNoteOn = (keyIndex: number) => dispatch({ type: "triggerNoteOn", keyIndex })
+      const onNoteOff = (keyIndex: number) => dispatch({ type: "triggerNoteOff", keyIndex })
+      addGlobalKeyListeners(onNoteOn, onNoteOff)
+    },
+    []
+  )
 
   return <Root>
     <Navigation dispatch={dispatch} openPanel={openPanel} />
@@ -43,7 +50,7 @@ export function App() {
               displayedAccidental={displayedAccidental}
               pitches={pitches}
               selection={sequencerSelection}
-              playback={sequencerPlayback}
+              playbackStepIndex={ sequencerPlayback && sequencerPlayback.currentStepIndex }
               shareUrl={shareUrl} />
         : openPanel === "tuning"
           ? <TuningPanel
@@ -56,7 +63,7 @@ export function App() {
         : openPanel === "synth"
           ? <SynthPanel
               dispatch={dispatch}
-              waveform={waveform} />
+              synth={synth} />
         : null
       }
     </Main>

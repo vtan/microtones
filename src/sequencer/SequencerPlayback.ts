@@ -2,7 +2,7 @@ import * as Tone from "tone"
 
 import { AppState } from "../AppState"
 import { sequenceToEvents, StepEvent, sequenceToTimes } from "./Sequence"
-import { waveformToSynth } from "../synth/Waveform"
+import { createPlaybackSynth } from "../synth/Synth"
 
 export interface SequencerPlaybackState {
   synth: Tone.PolySynth,
@@ -16,7 +16,7 @@ export function startSequencerPlayback(
   onPlaybackStep: (_: number) => void,
   fromStep: number = 0
 ): SequencerPlaybackState {
-  const synth = waveformToSynth(state.waveform)
+  const synth = createPlaybackSynth(state.synth)
 
   const sequence = state.sequence
   const currentStepIndex =

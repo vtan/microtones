@@ -2,7 +2,7 @@ import * as Pako from "pako"
 
 import { Step, emptySteps } from "../sequencer/Sequence"
 import { Project } from "./Project"
-import { allWaveforms } from "../synth/Waveform"
+import { Synth } from "../synth/Synth"
 import { Accidental } from "../Note"
 
 const hashPrefix = "#sequence/1="
@@ -29,7 +29,7 @@ export function importFromHash(hash: string): Project | undefined {
 }
 
 interface ExportedProject {
-  wf: number,
+  sy: Synth, // TODO temporary?
   ac: number
   ns: number,
   s: ReadonlyArray<ExportedSequence>
@@ -47,11 +47,6 @@ type EncodedStep = number
 type ExportedStep = [StepOffset, EncodedStep]
 
 function exportProject(project: Project): ExportedProject {
-  const waveform = allWaveforms.indexOf(project.waveform)
-  if (waveform < 0) {
-    throw new Error(`Invalid waveform: ${project.waveform}`)
-  }
-
   let accidental
   switch (project.displayedAccidental) {
     case "sharp": accidental = 0; break
@@ -89,7 +84,7 @@ function exportProject(project: Project): ExportedProject {
     e: events
   }
   return {
-    wf: waveform,
+    sy: project.synth,
     ac: accidental,
     ns: numberOfSubdivisions,
     s: [exportedSequence]
@@ -97,11 +92,7 @@ function exportProject(project: Project): ExportedProject {
 }
 
 function importProject(exported: ExportedProject): Project {
-  const waveform = allWaveforms[exported.wf]
-  if (waveform === undefined) {
-    throw new Error(`Invalid waveform index: ${exported.wf}`)
-  }
-
+  const synth = exported.sy
   const numberOfSubdivisions = exported.ns
   const exportedSequence = exported.s[0]
   if (exportedSequence === undefined) {
@@ -128,7 +119,7 @@ function importProject(exported: ExportedProject): Project {
   })
 
   const sequence = { numberOfTracks, secondsPerStep, steps }
-  return { waveform, numberOfSubdivisions, displayedAccidental, sequence }
+  return { synth, numberOfSubdivisions, displayedAccidental, sequence }
 }
 
 function compressProject(project: ExportedProject): string {

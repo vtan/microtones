@@ -1,4 +1,3 @@
-import * as _ from "lodash"
 import * as React from "react"
 import styled from "styled-components"
 
@@ -7,8 +6,8 @@ import { Pitch } from "../Pitch"
 import { Sequence, Step, SequenceIndex } from "./Sequence"
 import { notesIn12Edo, diffText, Accidental } from "../Note"
 import { selectionColor, playbackColor } from "../Util"
-import { Hint, Label } from "../InputComponents"
-import { SequencerPlaybackState } from "./SequencerPlayback"
+import { Hint, Label, InputRow } from "../InputComponents"
+import { Slider } from "../common/Slider"
 
 interface Props {
   dispatch: AppDispatch,
@@ -16,12 +15,12 @@ interface Props {
   displayedAccidental: Accidental,
   pitches: ReadonlyArray<Pitch>,
   selection?: SequenceIndex,
-  playback?: SequencerPlaybackState,
+  playbackStepIndex?: number,
   shareUrl: string
 }
 
 export function SequencerPanel(
-  { dispatch, sequence, displayedAccidental, pitches, selection, playback, shareUrl }: Props
+  { dispatch, sequence, displayedAccidental, pitches, selection, playbackStepIndex, shareUrl }: Props
 ) {
   React.useEffect(
     () => {
@@ -47,21 +46,12 @@ export function SequencerPanel(
     () => 60 / (4 * sequence.secondsPerStep),
     [sequence.secondsPerStep]
   )
-  const [displayedTempo, setDisplayedTempo] = React.useState(tempo)
-  const dispatchTempoChange = React.useCallback(
-    _.throttle((bpm: number) => {
-      const secondsPerStep = 60 / bpm / 4
-      dispatch({ type: "setSequenceTempo", secondsPerStep })
-    }, 500, { leading: false }),
-    []
-  )
   const onTempoChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const bpm = parseInt(e.target.value)
-      dispatchTempoChange(bpm)
-      setDisplayedTempo(bpm)
+    (bpm: number) => {
+      const secondsPerStep = 60 / Math.round(bpm) / 4
+      dispatch({ type: "setSequenceTempo", secondsPerStep })
     },
-    [dispatchTempoChange]
+    []
   )
 
   const onShare = React.useCallback(
@@ -93,15 +83,14 @@ export function SequencerPanel(
     </InputRow>
     <InputRow>
       <Label>Tempo</Label>
-      <TempoText>{displayedTempo.toFixed(0)}</TempoText>
-      <TempoSlider onChange={onTempoChange} type="range" min={40} max={200} value={displayedTempo} />
+      <Slider onThrottledChange={onTempoChange} initialValue={tempo} min={40} max={200} />
     </InputRow>
     <InputRow>
       <Button
         onClick={ () => dispatch({ type: "toggleSequencerPlaying", dispatch }) }
         style={{ width: "3.5rem" }}
       >
-        { playback === undefined ? "Play" : "Stop" }
+        { playbackStepIndex === undefined ? "Play" : "Stop" }
       </Button>
       <Button onClick={ () => deleteSelectedStep(dispatch) } disabled={ selection === undefined }>Delete note</Button>
       <Button onClick={ () => holdSelectedStep(dispatch) } disabled={ selection === undefined }>Hold note</Button>
@@ -118,7 +107,7 @@ export function SequencerPanel(
       <tbody>
         { sequence.steps.map((stepsPerTrack, i) => {
             const isStepSelected = selection !== undefined && selection.step === i
-            const isCurrentlyPlayed = playback !== undefined && playback.currentStepIndex === i
+            const isCurrentlyPlayed = playbackStepIndex === i
             return <SequencerRow key={i} isCurrentlyPlayed={isCurrentlyPlayed}>
               <StepNumberCell key={i}>{ i + 1 }</StepNumberCell>
               { stepsPerTrack.map((step, j) => {
@@ -182,14 +171,6 @@ const keyDownListener = (dispatch: AppDispatch) => (e: KeyboardEvent): void => {
   }
 }
 
-const InputRow = styled.div`
-  margin-bottom: 0.5rem;
-
-  & > :not(:first-child) {
-    margin-left: 0.5rem;
-  }
-`;
-
 const Button = styled.button`
   padding: 0.25rem 0.5rem;
   border: 1px solid #bbb;
@@ -211,16 +192,6 @@ const Input = styled.input`
   color: inherit;
   font: inherit;
 `
-
-const TempoText = styled.span`
-  display: inline-block;
-  width: 2.5rem;
-`
-
-const TempoSlider = styled.input`
-  width: 16rem;
-  height: 0.75rem;
-`;
 
 const SequencerTable = styled.table`
   margin-top: 2rem;
