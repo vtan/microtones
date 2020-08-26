@@ -43,7 +43,7 @@ export const Slider = ({ initialValue, min, max, step = 1, onThrottledChange, va
 
 const Text = styled.span`
   display: inline-block;
-  width: 3rem;
+  width: 4rem;
 `
 
 const Input = styled.input`

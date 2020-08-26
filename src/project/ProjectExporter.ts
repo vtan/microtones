@@ -2,7 +2,7 @@ import * as Pako from "pako"
 
 import { Step, emptySteps } from "../sequencer/Sequence"
 import { Project } from "./Project"
-import { Synth } from "../synth/Synth"
+import { Instrument } from "../synth/Instrument"
 import { Accidental } from "../Note"
 
 const hashPrefix = "#sequence/1="
@@ -29,7 +29,7 @@ export function importFromHash(hash: string): Project | undefined {
 }
 
 interface ExportedProject {
-  sy: Synth, // TODO temporary?
+  i: Instrument, // TODO temporary?
   ac: number
   ns: number,
   s: ReadonlyArray<ExportedSequence>
@@ -84,7 +84,7 @@ function exportProject(project: Project): ExportedProject {
     e: events
   }
   return {
-    sy: project.synth,
+    i: project.instrument,
     ac: accidental,
     ns: numberOfSubdivisions,
     s: [exportedSequence]
@@ -92,7 +92,7 @@ function exportProject(project: Project): ExportedProject {
 }
 
 function importProject(exported: ExportedProject): Project {
-  const synth = exported.sy
+  const instrument = exported.i
   const numberOfSubdivisions = exported.ns
   const exportedSequence = exported.s[0]
   if (exportedSequence === undefined) {
@@ -119,7 +119,7 @@ function importProject(exported: ExportedProject): Project {
   })
 
   const sequence = { numberOfTracks, secondsPerStep, steps }
-  return { synth, numberOfSubdivisions, displayedAccidental, sequence }
+  return { instrument, numberOfSubdivisions, displayedAccidental, sequence }
 }
 
 function compressProject(project: ExportedProject): string {

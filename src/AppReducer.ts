@@ -5,14 +5,14 @@ import { Panel } from "./navigation/Panel"
 import { exportToHash } from "./project/ProjectExporter"
 import { emptySequence, SequenceIndex, setInSequence, sequenceToEvents, Step, resizeSequenceSteps } from "./sequencer/Sequence"
 import { restartSequencerPlayback, startSequencerPlayback, stopSequencerPlayback } from "./sequencer/SequencerPlayback"
-import { Synth, playbackSynthOptions } from "./synth/Synth"
+import { InstrumentChange, updateInstrument } from "./synth/Instrument"
 
 export type AppAction =
   { type: "openPanel", panel: Panel }
   | { type: "setNumberOfSubdivisions", numberOfSubdivisions: number }
   | { type: "setDisplayedAccidental", displayedAccidental: Accidental }
   | { type: "setKeyboardOffset", keyboardOffset: number }
-  | { type: "updateSynth", synthDiff: Partial<Synth> }
+  | { type: "updateInstrument", diff: InstrumentChange }
   | { type: "triggerNoteOn", keyIndex: number }
   | { type: "triggerNoteOff", keyIndex: number }
   | { type: "setSequencerSelection", selection?: SequenceIndex }
@@ -58,14 +58,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, keyboardOffset, keys }
     }
 
-    case "updateSynth": {
-      const synth = { ...state.synth, ...action.synthDiff }
-      const synthOptions = playbackSynthOptions(synth)
-      state.playbackSynth.set(synthOptions)
+    case "updateInstrument": {
+      const instrument = updateInstrument(state.instrument, action.diff)
+      state.playbackInstrument.set(instrument)
       if (state.sequencerPlayback !== undefined) {
-        state.sequencerPlayback.synth.set(synthOptions)
+        state.sequencerPlayback.instrument.set(instrument)
       }
-      return { ...state, synth, shareUrl: "" }
+      return { ...state, instrument, shareUrl: "" }
     }
 
     case "triggerNoteOn": {
@@ -73,7 +72,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (key === undefined || state.pressedKeyIndices.indexOf(action.keyIndex) >= 0) {
         return state
       } else {
-        state.playbackSynth.triggerAttack(key.pitch.frequency)
+        state.playbackInstrument.synth.triggerAttack(key.pitch.frequency)
 
         const pressedKeyIndices = [ ...state.pressedKeyIndices, action.keyIndex ]
         const updateSequence =
@@ -90,7 +89,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (key === undefined || state.pressedKeyIndices.indexOf(action.keyIndex) < 0) {
         return state
       } else {
-        state.playbackSynth.triggerRelease(key.pitch.frequency)
+        state.playbackInstrument.synth.triggerRelease(key.pitch.frequency)
 
         const pressedKeyIndices = state.pressedKeyIndices.filter(i => i !== action.keyIndex)
         return { ...state, pressedKeyIndices }

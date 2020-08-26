@@ -10,7 +10,7 @@ export const InputRow = styled.div`
 
 export const Label = styled.span`
   display: inline-block;
-  min-width: 6rem;
+  min-width: 7rem;
   margin-right: 0.5rem;
   font-weight: bold;
 `

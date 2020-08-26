@@ -18,7 +18,7 @@ function initializeState(): AppState {
 export function App() {
   const [state, dispatch] = React.useReducer(appReducer, undefined, initializeState)
   const
-    { openPanel, numberOfSubdivisions, displayedAccidental, synth
+    { openPanel, numberOfSubdivisions, displayedAccidental, instrument
     , notes, pitches, keys, keyboardOffset, pressedKeyIndices
     , sequence, sequencerSelection, sequencerPlayback
     , shareUrl
@@ -63,7 +63,7 @@ export function App() {
         : openPanel === "synth"
           ? <SynthPanel
               dispatch={dispatch}
-              synth={synth} />
+              instrument={instrument} />
         : null
       }
     </Main>

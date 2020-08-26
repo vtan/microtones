@@ -2,10 +2,10 @@ import * as Tone from "tone"
 
 import { AppState } from "../AppState"
 import { sequenceToEvents, StepEvent, sequenceToTimes } from "./Sequence"
-import { createPlaybackSynth } from "../synth/Synth"
+import { PlaybackInstrument } from "../synth/PlaybackInstrument"
 
 export interface SequencerPlaybackState {
-  synth: Tone.PolySynth,
+  instrument: PlaybackInstrument,
   stepEventsRef: [ReadonlyArray<ReadonlyArray<StepEvent>>],
   currentStepIndex: number,
   onPlaybackStep: (_: number) => void
@@ -16,7 +16,7 @@ export function startSequencerPlayback(
   onPlaybackStep: (_: number) => void,
   fromStep: number = 0
 ): SequencerPlaybackState {
-  const synth = createPlaybackSynth(state.synth)
+  const instrument = new PlaybackInstrument(state.instrument)
 
   const sequence = state.sequence
   const currentStepIndex =
@@ -27,7 +27,7 @@ export function startSequencerPlayback(
   const part = new Tone.Part(
     (time, { stepIndex }) => {
       for (const event of stepEventsRef[0][stepIndex]) {
-        synth.triggerAttackRelease(event.frequency, event.duration, time)
+        instrument.synth.triggerAttackRelease(event.frequency, event.duration, time)
       }
       onPlaybackStep(stepIndex)
     },
@@ -42,7 +42,7 @@ export function startSequencerPlayback(
   part.loop = true
   part.start(0, startOffset)
 
-  return { synth, stepEventsRef, onPlaybackStep, currentStepIndex }
+  return { instrument, stepEventsRef, onPlaybackStep, currentStepIndex }
 }
 
 export function restartSequencerPlayback(state: AppState): SequencerPlaybackState | undefined {
@@ -58,8 +58,6 @@ export function stopSequencerPlayback(state: AppState): void {
   Tone.Transport.stop()
   Tone.Transport.cancel()
   if (state.sequencerPlayback !== undefined) {
-    const synth = state.sequencerPlayback.synth
-    synth.releaseAll()
-    synth.disconnect()
+    state.sequencerPlayback.instrument.free()
   }
 }
